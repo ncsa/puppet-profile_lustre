@@ -1,0 +1,42 @@
+---
+## EXAMPLE BINDMOUNTS MAP
+# profile_lustre::bindmounts::map:
+#   /scratch:
+#     src_mountpoint: "/mnt/mount"
+#     src_path: "/mnt/mount/scratch"
+#   /sw:
+#     opts: "defaults,bind,noauto,nodev"
+#     src_mountpoint: "/mnt/mount"
+#     src_path: "/mnt/mount/sw"
+
+profile_lustre::firewall::dports:
+  - 988
+profile_lustre::firewall::proto: "tcp"
+profile_lustre::firewall::sources:
+  - "127.0.0.1/32"
+
+profile_lustre::module::is_lnet_router: false
+profile_lustre::module::lnet_conf_file: "/etc/lnet.conf"
+# EXAMPLE LOCAL_NETWORKS DATA
+# profile_lustre::module::local_networks:
+#   tcp0:
+#     interface: "eth1"
+#   o2ib1:
+#     interface: "ib0"
+profile_lustre::module::modprobe_lustre_conf_file: "/etc/modprobe.d/lustre.conf"
+profile_lustre::module::remote_networks: {}
+# EXAMPLE REMOTE_NETWORKS DATA
+# profile_lustre::module::remote_networks: {}
+#   o2ib0:
+#     router_IPs: "172.28.16.[30-31]"
+#     router_net: "tcp0"
+
+## EXAMPLE LUSTRE MOUNTS MAP
+# profile_lustre::nativemounts::map:
+#   /mnt/mount:
+#     src: "lustre-server1.local@o2ib,lustre-server2.local@o2ib:/filesystem"
+#     opts: "defaults,nodev,nosuid"
+
+profile_lustre::service::lnet_service_enabled: false
+profile_lustre::service::lnet_service_name: "lnet"
+profile_lustre::service::lnet_service_running: false
