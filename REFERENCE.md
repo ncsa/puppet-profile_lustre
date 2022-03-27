@@ -14,6 +14,7 @@
 * [`profile_lustre::module`](#profile_lustremodule): Configure and build lnet & lustre kernel modules
 * [`profile_lustre::nativemounts`](#profile_lustrenativemounts): Mount Lustre filesystems on the client
 * [`profile_lustre::service`](#profile_lustreservice): Configure the lnet service
+* [`profile_lustre::tuning`](#profile_lustretuning): Apply Lustre tuning parameters using lctl.
 
 ### Defined types
 
@@ -289,6 +290,34 @@ String of the name of the lnet service
 Data type: `Boolean`
 
 Boolean to determine if the lnet service is ensured running
+
+### <a name="profile_lustretuning"></a>`profile_lustre::tuning`
+
+Apply Lustre tuning parameters using lctl.
+
+#### Examples
+
+##### 
+
+```puppet
+include profile_lustre::tuning
+```
+
+#### Parameters
+
+The following parameters are available in the `profile_lustre::tuning` class:
+
+* [`params`](#params)
+
+##### <a name="params"></a>`params`
+
+Data type: `Hash`
+
+Hash of tuning parameters:
+  "<key1>": "<value1>"
+  "<key2>": "<value2">
+Note: Keys may contain * as a wildcard. E.g.:
+  "osc.*.max_pages_per_rpc": "4096"
 
 ## Defined types
 

@@ -40,3 +40,5 @@ profile_lustre::module::remote_networks: {}
 profile_lustre::service::lnet_service_enabled: false
 profile_lustre::service::lnet_service_name: "lnet"
 profile_lustre::service::lnet_service_running: false
+
+profile_lustre::tuning::params: {}
