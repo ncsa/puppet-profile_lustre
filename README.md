@@ -77,6 +77,20 @@ profile_lustre::bindmounts::map:
 ...
 ```
 
+Tunings can be applied like this:
+
+```
+profile_lustre::tuning::params:
+  "osc.*.max_pages_per_rpc": "4096"
+  "osc.*.max_rpcs_in_flight": "16"
+  "osc.*.max_dirty_mb": "512"
+  "osc.*.checksums": "0"
+...
+```
+
+Recommendations and/or defaults TBD.
+
+
 ## Dependencies
 
 n/a
