@@ -18,8 +18,10 @@ class profile_lustre::bindmounts (
   Optional[ Hash ] $map = undef,
 ) {
 
-  $map.each | $k, $v | {
-    profile_lustre::bindmount_resource { $k: * => $v }
+  if $map {
+    $map.each | $k, $v | {
+      profile_lustre::bindmount_resource { $k: * => $v }
+    }
   }
 
 }
