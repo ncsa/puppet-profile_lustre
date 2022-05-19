@@ -14,6 +14,7 @@
 * [`profile_lustre::module`](#profile_lustremodule): Configure and build lnet & lustre kernel modules
 * [`profile_lustre::nativemounts`](#profile_lustrenativemounts): Mount Lustre filesystems on the client
 * [`profile_lustre::service`](#profile_lustreservice): Configure the lnet service
+* [`profile_lustre::telegraf::lustre_client_health`](#profile_lustretelegraflustre_client_health): Telegraf Lustre client health checks
 * [`profile_lustre::tuning`](#profile_lustretuning): Apply Lustre tuning parameters using lctl.
 
 ### Defined types
@@ -290,6 +291,44 @@ String of the name of the lnet service
 Data type: `Boolean`
 
 Boolean to determine if the lnet service is ensured running
+
+### <a name="profile_lustretelegraflustre_client_health"></a>`profile_lustre::telegraf::lustre_client_health`
+
+Telegraf Lustre client health checks
+
+#### Examples
+
+##### 
+
+```puppet
+include profile_lustre::telegraf::lustre_client_health
+```
+
+#### Parameters
+
+The following parameters are available in the `profile_lustre::telegraf::lustre_client_health` class:
+
+* [`enabled`](#enabled)
+* [`script_cfg`](#script_cfg)
+* [`telegraf_cfg`](#telegraf_cfg)
+
+##### <a name="enabled"></a>`enabled`
+
+Data type: `Boolean`
+
+Enable or disable this health check
+
+##### <a name="script_cfg"></a>`script_cfg`
+
+Data type: `Hash`
+
+Hash that controls the values for the script config file. See data/common.yaml for examples
+
+##### <a name="telegraf_cfg"></a>`telegraf_cfg`
+
+Data type: `Hash`
+
+Hash of key:value pairs passed to telegraf::input as options
 
 ### <a name="profile_lustretuning"></a>`profile_lustre::tuning`
 

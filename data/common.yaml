@@ -41,4 +41,19 @@ profile_lustre::service::lnet_service_enabled: false
 profile_lustre::service::lnet_service_name: "lnet"
 profile_lustre::service::lnet_service_running: false
 
+profile_lustre::telegraf::lustre_client_health::enabled: true
+profile_lustre::telegraf::lustre_client_health::script_cfg:
+  # Array of Mount Paths eg. "/taiga"
+  fs: []
+  # Array of paths to run ls check on eg. "/ngale/u/"
+  paths: []
+  # Array of files to check stat eg. "/ngale/.SETcheck"
+  files: []
+  # Array of IP/Protocol String for the first server of each FS to check presence of mgs eg."172.30.32.2@o2ib"
+  mgs: []
+profile_lustre::telegraf::lustre_client_health::telegraf_cfg:
+  data_format: "influx"
+  interval: "1m"
+  timeout: "30s"
+
 profile_lustre::tuning::params: {}
