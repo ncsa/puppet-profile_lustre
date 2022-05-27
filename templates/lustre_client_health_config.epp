@@ -1,0 +1,15 @@
+<%- | $fs,
+      $paths,
+      $files,
+      $mgs,
+| -%>
+# This file is managed by Puppet
+
+##Lustre Telegraf Config
+##
+
+readonly fs="<%= $fs.join(' ') %>" ## List of Mount Paths space separated eg. "/taiga /ngale"
+readonly paths="<%= $paths.join(' ') %>" ## Paths to run ls check on eg. "/ngale/u/"
+readonly files="<%= $files.join(' ') %>" ## List of files to check stat eg. "/ngale/.SETcheck"
+readonly mgs="<%= $mgs.join(' ') %>" ## List of IP/Protocol String for the first server of each FS to check presence of mgs eg."172.30.32.2@o2ib 172.38.39.45@tcp"
+
