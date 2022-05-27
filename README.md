@@ -158,6 +158,7 @@ profile_lustre::telegraf::lustre_client_health::script_cfg:
 
 * https://github.com/ncsa/puppet-telegraf
 * https://github.com/ncsa/puppet-profile_monitoring
+* https://forge.puppet.com/modules/saz/sudo
 
 ## Reference
 
