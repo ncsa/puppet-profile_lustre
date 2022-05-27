@@ -90,18 +90,10 @@ class profile_lustre::telegraf::lustre_client_health (
   #
   # Sudo config specific for this profile
   #
-  pam_access::entry { 'telegraf sudo for lustre check':
-    group      => 'telegraf',
-    origin     => 'LOCAL',
-    permission => '+',
-    position   => '-1',
-  }
-
   sudo::conf { 'telegraf_lustre_check':
     ensure   => $ensure_parm,
     priority => 10,
     content  => $sudo_cfg,
   }
-
 
 }
