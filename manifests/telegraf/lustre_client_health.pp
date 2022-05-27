@@ -91,7 +91,7 @@ class profile_lustre::telegraf::lustre_client_health (
   # Sudo config specific for this profile
   #
   pam_access::entry { 'telegraf sudo for lustre check':
-    user       => 'telegraf',
+    group      => 'telegraf',
     origin     => 'LOCAL',
     permission => '+',
     position   => '-1',
