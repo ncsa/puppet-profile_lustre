@@ -61,9 +61,3 @@ profile_lustre::telegraf::lustre_client_health::telegraf_cfg:
   timeout: "30s"
 
 profile_lustre::tuning::params: {}
-
-# TODO test, not in correct order
-profile_sudo::configs:
-  telegraf_test:
-    content:
-      - "This is a test"
