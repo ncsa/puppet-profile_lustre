@@ -6,6 +6,9 @@
 # @param script_cfg
 #   Hash that controls the values for the script config file. See data/common.yaml for examples
 #
+# @param sudo_cfg
+#   String setting sudo config for this lustre check
+#
 # @param telegraf_cfg
 #   Hash of key:value pairs passed to telegraf::input as options
 #
@@ -14,6 +17,7 @@
 class profile_lustre::telegraf::lustre_client_health (
   Boolean $enabled,
   Hash    $script_cfg,
+  String  $sudo_cfg,
   Hash    $telegraf_cfg,
 ){
 
@@ -82,5 +86,22 @@ class profile_lustre::telegraf::lustre_client_health (
     group   => 'telegraf',
     mode    => '0740',
   }
+
+  #
+  # Sudo config specific for this profile
+  #
+  pam_access::entry { 'telegraf sudo for lustre check':
+    user       => 'telegraf',
+    origin     => 'LOCAL',
+    permission => '+',
+    position   => '-1',
+  }
+
+  sudo::conf { 'telegraf_lustre_check':
+    ensure   => $ensure_parm,
+    priority => 10,
+    content  => $sudo_cfg,
+  }
+
 
 }

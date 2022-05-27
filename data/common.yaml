@@ -51,6 +51,10 @@ profile_lustre::telegraf::lustre_client_health::script_cfg:
   files: []
   # Array of IP/Protocol String for the first server of each FS to check presence of mgs eg."172.30.32.2@o2ib"
   mgs: []
+profile_lustre::telegraf::lustre_client_health::sudo_cfg: |
+  Defaults:telegraf !mail_always
+  Defaults:telegraf !requiretty
+  telegraf ALL = NOPASSWD: NOMAIL: /usr/sbin/lctl ping *
 profile_lustre::telegraf::lustre_client_health::telegraf_cfg:
   data_format: "influx"
   interval: "1m"

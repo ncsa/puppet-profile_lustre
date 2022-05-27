@@ -310,6 +310,7 @@ The following parameters are available in the `profile_lustre::telegraf::lustre_
 
 * [`enabled`](#enabled)
 * [`script_cfg`](#script_cfg)
+* [`sudo_cfg`](#sudo_cfg)
 * [`telegraf_cfg`](#telegraf_cfg)
 
 ##### <a name="enabled"></a>`enabled`
@@ -323,6 +324,12 @@ Enable or disable this health check
 Data type: `Hash`
 
 Hash that controls the values for the script config file. See data/common.yaml for examples
+
+##### <a name="sudo_cfg"></a>`sudo_cfg`
+
+Data type: `String`
+
+String setting sudo config for this lustre check
 
 ##### <a name="telegraf_cfg"></a>`telegraf_cfg`
 
