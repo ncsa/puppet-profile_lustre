@@ -6,6 +6,10 @@
 # @param lnet_conf_file
 #   Full path to lnet.conf file, e.g. "/etc/lnet.conf"
 #
+# @param lnet_trigger_file
+#   Full path to LNet trigger file (if this file is NOT present,
+#   Puppet will (re)configure Lnet).
+#
 # @param local_networks
 #   Hash of data to configure local NIDs on the host, in this form:
 #     <LOCAL_LND_1>:
@@ -37,6 +41,7 @@
 class profile_lustre::module (
   Boolean $is_lnet_router,
   String  $lnet_conf_file,
+  String  $lnet_trigger_file,
   Hash    $local_networks,
   String  $modprobe_lustre_conf_file,
   Hash    $remote_networks,
@@ -60,13 +65,14 @@ class profile_lustre::module (
     mode    => '0640',
   }
 
-  # BUILD lnet.conf FILE / CONFIGURE LNET
+  # CONFIGURE LNET
   $configure_lustre_command = "modprobe lnet && lnetctl lnet configure --all && \
-    lnetctl export --backup > ${lnet_conf_file}"
-  exec { 'build_lnet_conf':
+    lnetctl export --backup > ${lnet_conf_file} && \
+    echo 'If this file is deleted Puppet will reconfigure LNet' > ${lnet_trigger_file}"
+  exec { 'configure_lustre':
     command => $configure_lustre_command,
-    creates => $lnet_conf_file,
-    unless  => "test -f ${lnet_conf_file}",
+    creates => $lnet_trigger_file,
+    unless  => "test -f ${lnet_trigger_file}",
     path    => ['/usr/bin', '/usr/sbin', '/sbin'],
     require => [
       Package[ $profile_lustre::install::required_pkgs ],
@@ -78,7 +84,7 @@ class profile_lustre::module (
       command   => 'modprobe lustre',
       unless    => 'lsmod | grep lustre',
       path      => ['/usr/bin', '/usr/sbin', '/sbin'],
-      subscribe => Exec['build_lnet_conf'],
+      subscribe => Exec['configure_lustre'],
       require   => [
         Package[ $profile_lustre::install::required_pkgs ],
       ],

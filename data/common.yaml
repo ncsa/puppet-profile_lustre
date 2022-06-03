@@ -17,6 +17,7 @@ profile_lustre::firewall::sources:
 
 profile_lustre::module::is_lnet_router: false
 profile_lustre::module::lnet_conf_file: "/etc/lnet.conf"
+profile_lustre::module::lnet_trigger_file: "/etc/lnet.trigger"
 # EXAMPLE LOCAL_NETWORKS DATA
 # profile_lustre::module::local_networks:
 #   tcp0:

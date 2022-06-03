@@ -171,6 +171,7 @@ The following parameters are available in the `profile_lustre::module` class:
 
 * [`is_lnet_router`](#is_lnet_router)
 * [`lnet_conf_file`](#lnet_conf_file)
+* [`lnet_trigger_file`](#lnet_trigger_file)
 * [`local_networks`](#local_networks)
 * [`modprobe_lustre_conf_file`](#modprobe_lustre_conf_file)
 * [`remote_networks`](#remote_networks)
@@ -186,6 +187,13 @@ Is the node an LNet router or not?
 Data type: `String`
 
 Full path to lnet.conf file, e.g. "/etc/lnet.conf"
+
+##### <a name="lnet_trigger_file"></a>`lnet_trigger_file`
+
+Data type: `String`
+
+Full path to LNet trigger file (if this file is NOT present,
+Puppet will (re)configure Lnet).
 
 ##### <a name="local_networks"></a>`local_networks`
 
