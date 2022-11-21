@@ -75,6 +75,7 @@ class profile_lustre::module (
     unless  => "test -f ${lnet_trigger_file}",
     path    => ['/usr/bin', '/usr/sbin', '/sbin'],
     require => [
+      File[ $modprobe_lustre_conf_file ],
       Package[ $profile_lustre::install::required_pkgs ],
     ],
   }
@@ -86,6 +87,7 @@ class profile_lustre::module (
       path      => ['/usr/bin', '/usr/sbin', '/sbin'],
       subscribe => Exec['configure_lustre'],
       require   => [
+        File[ $modprobe_lustre_conf_file ],
         Package[ $profile_lustre::install::required_pkgs ],
       ],
     }
