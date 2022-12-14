@@ -104,6 +104,35 @@ Recommendations and/or defaults TBD.
 
 ### Telegraf Monitoring
 
+#### Lustre Router Stats
+Can use telegraf to monitor lustre router stats
+
+To enable/disable set:
+```yaml
+profile_lustre::telegraf::lnet_router_stats::enabled: true
+```
+
+Some configuration must be done for telegraf monitoring to work. This configuration is handled with the `profile_lustre::telegraf::lnet_router_stats::script_cfg` hash
+
+Example:
+```
+#For a lustre CLIENT system with these mounts
+[root@hli-cn09 ~]# findmnt -t lustre
+TARGET    SOURCE
+/storage  192.168.1.2@o2ib,192.168.1.3@o2ib:192.168.1.4@o2ib,192.168.1.5@o2ib:192.168.1.6@o2ib,192.168.1.7@o2ib:192.168.1.8@o2ib,192.168.1.9@o2ib:/storage
+/projects 192.168.1.2@o2ib,192.168.1.3@o2ib:192.168.1.4@o2ib,192.168.1.5@o2ib:192.168.1.6@o2ib,192.168.1.7@o2ib:192.168.1.8@o2ib,192.168.1.9@o2ib:/storage[/nsf/prg]
+```
+
+You can use a config like this:
+
+```yaml
+profile_lustre::telegraf::lnet_router_stats::script_cfg:
+  # Array of Lustre filesystem(s)
+  fs:
+    - "storage"
+```
+
+#### Lustre Client Health
 Can use telegraf to monitor lustre client health
 
 To enable/disable set:
@@ -170,6 +199,7 @@ profile_lustre::telegraf::lustre_client_health::script_cfg:
 
 * https://github.com/ncsa/puppet-telegraf
 * https://github.com/ncsa/puppet-profile_monitoring
+* https://forge.puppet.com/modules/saz/sudo
 
 ## Reference
 

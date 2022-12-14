@@ -300,6 +300,51 @@ Data type: `Boolean`
 
 Boolean to determine if the lnet service is ensured running
 
+### <a name="profile_lustretelegraflnet_router"></a>`profile_lustre::telegraf::lnet_router_stats`
+
+Telegraf Lustre router stat checks
+
+#### Examples
+
+##### 
+
+```puppet
+include profile_lustre::telegraf::lnet_router_stats
+```
+
+#### Parameters
+
+The following parameters are available in the `profile_lustre::telegraf::lnet_router_stats` class:
+
+* [`enabled`](#enabled)
+* [`script_cfg`](#script_cfg)
+* [`sudo_cfg`](#sudo_cfg)
+* [`telegraf_cfg`](#telegraf_cfg)
+
+##### <a name="enabled"></a>`enabled`
+
+Data type: `Boolean`
+
+Enable or disable this health check
+
+##### <a name="script_cfg"></a>`script_cfg`
+
+Data type: `Hash`
+
+Hash that controls the values for the script config file. See data/common.yaml for examples
+
+##### <a name="sudo_cfg"></a>`sudo_cfg`
+
+Data type: `String`
+
+String setting sudo config for this lustre check
+
+##### <a name="telegraf_cfg"></a>`telegraf_cfg`
+
+Data type: `Hash`
+
+Hash of key:value pairs passed to telegraf::input as options
+
 ### <a name="profile_lustretelegraflustre_client_health"></a>`profile_lustre::telegraf::lustre_client_health`
 
 Telegraf Lustre client health checks

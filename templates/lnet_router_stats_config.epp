@@ -1,0 +1,8 @@
+<%- | $fs
+| -%>
+# This file is managed by Puppet
+
+##Lustre Telegraf Config
+##
+
+readonly fs="<%= $fs.join(' ') %>" ## List of Mount Paths space separated eg. "/taiga /ngale"

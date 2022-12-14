@@ -1,0 +1,10 @@
+<%- | $source_path,
+| -%>
+#!/bin/bash
+# This file is managed by Puppet
+
+source <%= $source_path %>
+
+stats_line=$(sudo /usr/sbin/lnetctl stats show | sed 's/:\ /=/' | tail -n +2 | xargs | sed 's/\ /,/g')
+
+echo "lnet_stats,fs=${fs} ${stats_line}"
