@@ -42,6 +42,19 @@ profile_lustre::service::lnet_service_enabled: false
 profile_lustre::service::lnet_service_name: "lnet"
 profile_lustre::service::lnet_service_running: false
 
+profile_lustre::telegraf::lnet_router_stats::enabled: true
+profile_lustre::telegraf::lnet_router_stats::script_cfg:
+  # Array of Lustre filesystem(s)
+  fs: []
+profile_lustre::telegraf::lnet_router_stats::sudo_cfg: |
+  Defaults:telegraf !mail_always
+  Defaults:telegraf !requiretty
+  telegraf ALL = NOPASSWD: NOMAIL: /usr/sbin/lnetctl *
+profile_lustre::telegraf::lnet_router_stats::telegraf_cfg:
+  data_format: "influx"
+  interval: "1m"
+  timeout: "30s"
+
 profile_lustre::telegraf::lustre_client_health::enabled: true
 profile_lustre::telegraf::lustre_client_health::script_cfg:
   # Array of Mount Paths eg. "/taiga"
