@@ -56,17 +56,29 @@ profile_lustre::module::local_networks:
   o2ib1:
     interface: "ib0"
 profile_lustre::module::remote_networks:
-  o2ib0:
+  o2ib:
     router_IPs: "172.28.16.[30-31]"
     router_net: "tcp0"
 
 profile_lustre::nativemounts::map:
-  /mnt/mount:
-    src: "lustre-server1.local@o2ib,lustre-server2.local@o2ib:/filesystem"
+  /mnt/mount1:
+    # mounting Lustre from 2 single-rail servers; single-rail servers are
+    # typical for smaller, cluster-local Lustre deployments; separate
+    # single-rail servers using ':'
+    src: "lustre-server1.local@o2ib1:lustre-server2.local@o2ib1:/filesystem"
+    opts: "defaults,nodev,nosuid"
+  /mnt/mount2:
+    # mounting Lustre from 2 dual-rail servers; dual-rail servers are
+    # more typical for larger Lustre deployments (e.g., center-wide shared
+    # filesystems); separate each server using ':' and both NIDs (IP@net)
+    # for each server using ','
+    src: "lustre-server-a1.local@o2ib,lustre-server-a2.local@o2ib:lustre-server-b1.local@o2ib,lustre-server-b2.local@o2ib:/filesystem"
     opts: "defaults,nodev,nosuid"
 ```
 
-To include bindmounts you would include parameters like this:
+Bindmounts are discouraged; use (sub-directory) native mounts instead.
+
+However, to include bindmounts you would include parameters like this:
 
 ```
 profile_lustre::bindmounts::map:
