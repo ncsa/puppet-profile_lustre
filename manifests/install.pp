@@ -9,10 +9,9 @@
 # @example
 #   include profile_lustre::install
 class profile_lustre::install (
-  Array[ String ] $required_pkgs,
+  Array[String] $required_pkgs,
   Hash            $yumrepo,
 ) {
-
   $yumrepo_defaults = {
     ensure  => present,
     enabled => true,
@@ -22,5 +21,4 @@ class profile_lustre::install (
   $packages_defaults = {
   }
   ensure_packages( $required_pkgs, $packages_defaults )
-
 }

@@ -15,13 +15,11 @@
 # @example
 #   include profile_lustre::bindmounts
 class profile_lustre::bindmounts (
-  Optional[ Hash ] $map = undef,
+  Optional[Hash] $map = undef,
 ) {
-
   if $map {
     $map.each | $k, $v | {
       profile_lustre::bindmount_resource { $k: * => $v }
     }
   }
-
 }

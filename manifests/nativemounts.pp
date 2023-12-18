@@ -14,11 +14,9 @@
 # @example
 #   include profile_lustre::nativemounts
 class profile_lustre::nativemounts (
-  Optional[ Hash ] $map = undef,
+  Optional[Hash] $map = undef,
 ) {
-
   $map.each | $k, $v | {
     profile_lustre::nativemount_resource { $k: * => $v }
   }
-
 }

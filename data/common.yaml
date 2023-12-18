@@ -9,6 +9,16 @@
 #     src_mountpoint: "/mnt/mount"
 #     src_path: "/mnt/mount/sw"
 
+profile_lustre::client::tuning::params:
+  "osc.*.max_pages_per_rpc": "4096"
+  "osc.*.max_rpcs_in_flight": "16"
+  "osc.*.max_dirty_mb": "512"
+  "osc.*.checksums": "0"
+  "llite.*.max_read_ahead_mb": "2048"
+  "ldlm.namespaces.*.lru_size": "4000000"
+  "mdc.*.max_rpcs_in_flight": "128"
+  "llite.*.max_read_ahead_per_file_mb": "256"
+
 profile_lustre::firewall::dports:
   - 988
 profile_lustre::firewall::proto: "tcp"
@@ -69,5 +79,3 @@ profile_lustre::telegraf::lustre_client_health::telegraf_cfg:
   data_format: "influx"
   interval: "1m"
   timeout: "30s"
-
-profile_lustre::tuning::params: {}

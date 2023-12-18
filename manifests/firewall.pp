@@ -18,9 +18,7 @@ class profile_lustre::firewall (
   String          $proto,
   Array[String]   $sources,
 ) {
-
-  $sources.each | $location, $source |
-  {
+  $sources.each | $location, $source | {
     firewall { "200 allow Lustre via ${proto} from ${source}":
       proto  => $proto,
       dport  => $dports,
@@ -28,5 +26,4 @@ class profile_lustre::firewall (
       action => 'accept',
     }
   }
-
 }

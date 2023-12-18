@@ -46,7 +46,6 @@ class profile_lustre::module (
   String  $modprobe_lustre_conf_file,
   Hash    $remote_networks,
 ) {
-
   # determine which template to use to build lustre.conf file
   if $is_lnet_router {
     # use template for LNet routers
@@ -75,8 +74,8 @@ class profile_lustre::module (
     unless  => "test -f ${lnet_trigger_file}",
     path    => ['/usr/bin', '/usr/sbin', '/sbin'],
     require => [
-      File[ $modprobe_lustre_conf_file ],
-      Package[ $profile_lustre::install::required_pkgs ],
+      File[$modprobe_lustre_conf_file],
+      Package[$profile_lustre::install::required_pkgs],
     ],
   }
 
@@ -87,10 +86,9 @@ class profile_lustre::module (
       path      => ['/usr/bin', '/usr/sbin', '/sbin'],
       subscribe => Exec['configure_lustre'],
       require   => [
-        File[ $modprobe_lustre_conf_file ],
-        Package[ $profile_lustre::install::required_pkgs ],
+        File[$modprobe_lustre_conf_file],
+        Package[$profile_lustre::install::required_pkgs],
       ],
     }
   }
-
 }

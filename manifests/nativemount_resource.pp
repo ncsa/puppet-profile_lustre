@@ -17,7 +17,6 @@ define profile_lustre::nativemount_resource (
   String           $src,
   Optional[String] $opts = 'defaults,nodev,nosuid',
 ) {
-
   # Resource defaults
   Mount {
     ensure => mounted,
@@ -31,7 +30,7 @@ define profile_lustre::nativemount_resource (
   $dirparts = reject( split( $name, '/' ), '^$' )
   $numparts = size( $dirparts )
   if ( $numparts > 1 ) {
-    each( Integer[2,$numparts] ) |$i| {
+    each(Integer[2,$numparts]) |$i| {
       ensure_resource(
         'file',
         reduce( Integer[2,$i], $name ) |$memo, $val| { dirname( $memo ) },
@@ -48,9 +47,8 @@ define profile_lustre::nativemount_resource (
     device  => $src,
     options => $opts,
     require => [
-      File[ $name ],
-      Package[ $profile_lustre::install::required_pkgs ],
+      File[$name],
+      Package[$profile_lustre::install::required_pkgs],
     ],
   }
-
 }

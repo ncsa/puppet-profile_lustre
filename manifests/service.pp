@@ -16,14 +16,11 @@ class profile_lustre::service (
   String  $lnet_service_name,
   Boolean $lnet_service_running,
 ) {
-
   service { $lnet_service_name:
     ensure  => $lnet_service_running,
     enable  => $lnet_service_enabled,
     require => [
-      Package[ $profile_lustre::install::required_pkgs ],
+      Package[$profile_lustre::install::required_pkgs],
     ],
   }
-
-
 }

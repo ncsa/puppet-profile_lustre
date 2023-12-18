@@ -19,12 +19,11 @@ class profile_lustre::telegraf::lnet_router_stats (
   Hash    $script_cfg,
   String  $sudo_cfg,
   Hash    $telegraf_cfg,
-){
-
+) {
   #
   # Checks specific for this particular telegraf script
   #
-  if ($enabled) and ($::profile_monitoring::telegraf::enabled) {
+  if ($enabled) and ($profile_monitoring::telegraf::enabled) {
     $script_cfg.each | $cfg_parm, $cfg_parm_value | {
       if empty($cfg_parm_value) {
         notify { "WARNING: ${cfg_parm} is not set, so it not being monitored" : }
@@ -42,9 +41,9 @@ class profile_lustre::telegraf::lnet_router_stats (
   $script_cfg_full_path = "${script_path}/${script_base_name}_config"
 
   include profile_monitoring::telegraf
-  include ::telegraf
+  include telegraf
 
-  if ($enabled) and ($::profile_monitoring::telegraf::enabled) {
+  if ($enabled) and ($profile_monitoring::telegraf::enabled) {
     $ensure_parm = 'present'
   } else {
     $ensure_parm = 'absent'
@@ -64,12 +63,12 @@ class profile_lustre::telegraf::lnet_router_stats (
   telegraf::input { $script_base_name :
     ensure      => $ensure_parm,
     plugin_type => 'exec',
-    options     => [ $telegraf_cfg_final ],
+    options     => [$telegraf_cfg_final],
     require     => File[$script_full_path],
   }
 
   # Setup the actual script
-  $script_defaults = { source_path => $script_cfg_full_path,  }
+  $script_defaults = { source_path => $script_cfg_full_path, }
   file { $script_full_path :
     ensure  => $ensure_parm,
     content => epp("${module_name}/${script_base_name}${script_extension}.epp", $script_defaults),
