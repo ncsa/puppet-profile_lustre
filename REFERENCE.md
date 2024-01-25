@@ -6,25 +6,26 @@
 
 ### Classes
 
-* [`profile_lustre::bindmounts`](#profile_lustrebindmounts): Create bindmounts (generally of Lustre) on a directory
-* [`profile_lustre::client`](#profile_lustreclient): Manage Lustre for a client machine
-* [`profile_lustre::firewall`](#profile_lustrefirewall): A short summary of the purpose of this class
-* [`profile_lustre::install`](#profile_lustreinstall): Install Lustre client
-* [`profile_lustre::lnet_router`](#profile_lustrelnet_router): Manage Lustre for an LNet router
-* [`profile_lustre::module`](#profile_lustremodule): Configure and build lnet & lustre kernel modules
-* [`profile_lustre::nativemounts`](#profile_lustrenativemounts): Mount Lustre filesystems on the client
-* [`profile_lustre::service`](#profile_lustreservice): Configure the lnet service
-* [`profile_lustre::telegraf::lustre_client_health`](#profile_lustretelegraflustre_client_health): Telegraf Lustre client health checks
-* [`profile_lustre::tuning`](#profile_lustretuning): Apply Lustre tuning parameters using lctl.
+* [`profile_lustre::bindmounts`](#profile_lustre--bindmounts): Create bindmounts (generally of Lustre) on a directory
+* [`profile_lustre::client`](#profile_lustre--client): Manage Lustre for a client machine
+* [`profile_lustre::client::tuning`](#profile_lustre--client--tuning): Apply Lustre client tuning parameters using lctl.
+* [`profile_lustre::firewall`](#profile_lustre--firewall): A short summary of the purpose of this class
+* [`profile_lustre::install`](#profile_lustre--install): Install Lustre client
+* [`profile_lustre::lnet_router`](#profile_lustre--lnet_router): Manage Lustre for an LNet router
+* [`profile_lustre::module`](#profile_lustre--module): Configure and build lnet & lustre kernel modules
+* [`profile_lustre::nativemounts`](#profile_lustre--nativemounts): Mount Lustre filesystems on the client
+* [`profile_lustre::service`](#profile_lustre--service): Configure the lnet service
+* [`profile_lustre::telegraf::lnet_router_stats`](#profile_lustre--telegraf--lnet_router_stats): Telegraf LNET router stats
+* [`profile_lustre::telegraf::lustre_client_health`](#profile_lustre--telegraf--lustre_client_health): Telegraf Lustre client health checks
 
 ### Defined types
 
-* [`profile_lustre::bindmount_resource`](#profile_lustrebindmount_resource): Create a bindmount (generally of Lustre) on a directory
-* [`profile_lustre::nativemount_resource`](#profile_lustrenativemount_resource): Mount Lustre filesystem on a directory
+* [`profile_lustre::bindmount_resource`](#profile_lustre--bindmount_resource): Create a bindmount (generally of Lustre) on a directory
+* [`profile_lustre::nativemount_resource`](#profile_lustre--nativemount_resource): Mount Lustre filesystem on a directory
 
 ## Classes
 
-### <a name="profile_lustrebindmounts"></a>`profile_lustre::bindmounts`
+### <a name="profile_lustre--bindmounts"></a>`profile_lustre::bindmounts`
 
 ```
   profile_lustre::bindmounts::map:
@@ -46,19 +47,19 @@ include profile_lustre::bindmounts
 
 The following parameters are available in the `profile_lustre::bindmounts` class:
 
-* [`map`](#map)
+* [`map`](#-profile_lustre--bindmounts--map)
 
-##### <a name="map"></a>`map`
+##### <a name="-profile_lustre--bindmounts--map"></a>`map`
 
-Data type: `Optional[ Hash ]`
+Data type: `Optional[Hash]`
 
 mapping of (Lustre) filesystems to bindmounts
 
 Example hiera parameter:
 
-Default value: ``undef``
+Default value: `undef`
 
-### <a name="profile_lustreclient"></a>`profile_lustre::client`
+### <a name="profile_lustre--client"></a>`profile_lustre::client`
 
 Manage Lustre for a client machine
 
@@ -70,7 +71,35 @@ Manage Lustre for a client machine
 include profile_lustre::client
 ```
 
-### <a name="profile_lustrefirewall"></a>`profile_lustre::firewall`
+### <a name="profile_lustre--client--tuning"></a>`profile_lustre::client::tuning`
+
+Apply Lustre client tuning parameters using lctl.
+
+#### Examples
+
+##### 
+
+```puppet
+include profile_lustre::client::tuning
+```
+
+#### Parameters
+
+The following parameters are available in the `profile_lustre::client::tuning` class:
+
+* [`params`](#-profile_lustre--client--tuning--params)
+
+##### <a name="-profile_lustre--client--tuning--params"></a>`params`
+
+Data type: `Hash`
+
+Hash of Lustre client tuning parameters:
+  "<key1>": "<value1>"
+  "<key2>": "<value2">
+Note: Keys may contain * as a wildcard. E.g.:
+  "osc.*.max_pages_per_rpc": "4096"
+
+### <a name="profile_lustre--firewall"></a>`profile_lustre::firewall`
 
 A short summary of the purpose of this class
 
@@ -86,23 +115,23 @@ include profile_lustre::firewall
 
 The following parameters are available in the `profile_lustre::firewall` class:
 
-* [`dports`](#dports)
-* [`proto`](#proto)
-* [`sources`](#sources)
+* [`dports`](#-profile_lustre--firewall--dports)
+* [`proto`](#-profile_lustre--firewall--proto)
+* [`sources`](#-profile_lustre--firewall--sources)
 
-##### <a name="dports"></a>`dports`
+##### <a name="-profile_lustre--firewall--dports"></a>`dports`
 
 Data type: `Array[Integer]`
 
 Destination ports that need to be open for the lustre service
 
-##### <a name="proto"></a>`proto`
+##### <a name="-profile_lustre--firewall--proto"></a>`proto`
 
 Data type: `String`
 
 Protocol that needs to be open for the lustre service
 
-##### <a name="sources"></a>`sources`
+##### <a name="-profile_lustre--firewall--sources"></a>`sources`
 
 Data type: `Array[String]`
 
@@ -110,7 +139,7 @@ CIDR sources that need to be open for the lustre service.
 This should include all of the Lustre servers and any LNET routers.
 It may also need to other lustre client peers (need confirmation about this).
 
-### <a name="profile_lustreinstall"></a>`profile_lustre::install`
+### <a name="profile_lustre--install"></a>`profile_lustre::install`
 
 Install Lustre client
 
@@ -126,22 +155,22 @@ include profile_lustre::install
 
 The following parameters are available in the `profile_lustre::install` class:
 
-* [`required_pkgs`](#required_pkgs)
-* [`yumrepo`](#yumrepo)
+* [`required_pkgs`](#-profile_lustre--install--required_pkgs)
+* [`yumrepo`](#-profile_lustre--install--yumrepo)
 
-##### <a name="required_pkgs"></a>`required_pkgs`
+##### <a name="-profile_lustre--install--required_pkgs"></a>`required_pkgs`
 
-Data type: `Array[ String ]`
+Data type: `Array[String]`
 
 Packages that need to be installed for Lustre mounts to work.
 
-##### <a name="yumrepo"></a>`yumrepo`
+##### <a name="-profile_lustre--install--yumrepo"></a>`yumrepo`
 
 Data type: `Hash`
 
 Hash of yumrepo resource for lustre yum repository
 
-### <a name="profile_lustrelnet_router"></a>`profile_lustre::lnet_router`
+### <a name="profile_lustre--lnet_router"></a>`profile_lustre::lnet_router`
 
 Manage Lustre for an LNet router
 
@@ -153,7 +182,7 @@ Manage Lustre for an LNet router
 include profile_lustre::lnet_router
 ```
 
-### <a name="profile_lustremodule"></a>`profile_lustre::module`
+### <a name="profile_lustre--module"></a>`profile_lustre::module`
 
 Configure and build lnet & lustre kernel modules
 
@@ -169,33 +198,33 @@ include profile_lustre::module
 
 The following parameters are available in the `profile_lustre::module` class:
 
-* [`is_lnet_router`](#is_lnet_router)
-* [`lnet_conf_file`](#lnet_conf_file)
-* [`lnet_trigger_file`](#lnet_trigger_file)
-* [`local_networks`](#local_networks)
-* [`modprobe_lustre_conf_file`](#modprobe_lustre_conf_file)
-* [`remote_networks`](#remote_networks)
+* [`is_lnet_router`](#-profile_lustre--module--is_lnet_router)
+* [`lnet_conf_file`](#-profile_lustre--module--lnet_conf_file)
+* [`lnet_trigger_file`](#-profile_lustre--module--lnet_trigger_file)
+* [`local_networks`](#-profile_lustre--module--local_networks)
+* [`modprobe_lustre_conf_file`](#-profile_lustre--module--modprobe_lustre_conf_file)
+* [`remote_networks`](#-profile_lustre--module--remote_networks)
 
-##### <a name="is_lnet_router"></a>`is_lnet_router`
+##### <a name="-profile_lustre--module--is_lnet_router"></a>`is_lnet_router`
 
 Data type: `Boolean`
 
 Is the node an LNet router or not?
 
-##### <a name="lnet_conf_file"></a>`lnet_conf_file`
+##### <a name="-profile_lustre--module--lnet_conf_file"></a>`lnet_conf_file`
 
 Data type: `String`
 
 Full path to lnet.conf file, e.g. "/etc/lnet.conf"
 
-##### <a name="lnet_trigger_file"></a>`lnet_trigger_file`
+##### <a name="-profile_lustre--module--lnet_trigger_file"></a>`lnet_trigger_file`
 
 Data type: `String`
 
 Full path to LNet trigger file (if this file is NOT present,
 Puppet will (re)configure Lnet).
 
-##### <a name="local_networks"></a>`local_networks`
+##### <a name="-profile_lustre--module--local_networks"></a>`local_networks`
 
 Data type: `Hash`
 
@@ -209,13 +238,13 @@ E.g.:
   o2ib1:
     interface: "ib0"
 
-##### <a name="modprobe_lustre_conf_file"></a>`modprobe_lustre_conf_file`
+##### <a name="-profile_lustre--module--modprobe_lustre_conf_file"></a>`modprobe_lustre_conf_file`
 
 Data type: `String`
 
 Full path to modprobe lustre.conf file, e.g. "/etc/modprobe.d/lustre.conf"
 
-##### <a name="remote_networks"></a>`remote_networks`
+##### <a name="-profile_lustre--module--remote_networks"></a>`remote_networks`
 
 Data type: `Hash`
 
@@ -229,7 +258,7 @@ E.g.:
     router_IPs: "172.28.16.[30-31]"
     router_net: "tcp0"
 
-### <a name="profile_lustrenativemounts"></a>`profile_lustre::nativemounts`
+### <a name="profile_lustre--nativemounts"></a>`profile_lustre::nativemounts`
 
 ```
   profile_lustre::nativemounts::map:
@@ -250,19 +279,19 @@ include profile_lustre::nativemounts
 
 The following parameters are available in the `profile_lustre::nativemounts` class:
 
-* [`map`](#map)
+* [`map`](#-profile_lustre--nativemounts--map)
 
-##### <a name="map"></a>`map`
+##### <a name="-profile_lustre--nativemounts--map"></a>`map`
 
-Data type: `Optional[ Hash ]`
+Data type: `Optional[Hash]`
 
 mapping of Lustre filesystems to local mount points
 
 Example hiera parameter:
 
-Default value: ``undef``
+Default value: `undef`
 
-### <a name="profile_lustreservice"></a>`profile_lustre::service`
+### <a name="profile_lustre--service"></a>`profile_lustre::service`
 
 Configure the lnet service
 
@@ -278,31 +307,31 @@ include profile_lustre::service
 
 The following parameters are available in the `profile_lustre::service` class:
 
-* [`lnet_service_enabled`](#lnet_service_enabled)
-* [`lnet_service_name`](#lnet_service_name)
-* [`lnet_service_running`](#lnet_service_running)
+* [`lnet_service_enabled`](#-profile_lustre--service--lnet_service_enabled)
+* [`lnet_service_name`](#-profile_lustre--service--lnet_service_name)
+* [`lnet_service_running`](#-profile_lustre--service--lnet_service_running)
 
-##### <a name="lnet_service_enabled"></a>`lnet_service_enabled`
+##### <a name="-profile_lustre--service--lnet_service_enabled"></a>`lnet_service_enabled`
 
 Data type: `Boolean`
 
 Boolean to determine if the lnet service is enabled
 
-##### <a name="lnet_service_name"></a>`lnet_service_name`
+##### <a name="-profile_lustre--service--lnet_service_name"></a>`lnet_service_name`
 
 Data type: `String`
 
 String of the name of the lnet service
 
-##### <a name="lnet_service_running"></a>`lnet_service_running`
+##### <a name="-profile_lustre--service--lnet_service_running"></a>`lnet_service_running`
 
 Data type: `Boolean`
 
 Boolean to determine if the lnet service is ensured running
 
-### <a name="profile_lustretelegraflnet_router"></a>`profile_lustre::telegraf::lnet_router_stats`
+### <a name="profile_lustre--telegraf--lnet_router_stats"></a>`profile_lustre::telegraf::lnet_router_stats`
 
-Telegraf Lustre router stat checks
+Telegraf LNET router stats
 
 #### Examples
 
@@ -316,36 +345,36 @@ include profile_lustre::telegraf::lnet_router_stats
 
 The following parameters are available in the `profile_lustre::telegraf::lnet_router_stats` class:
 
-* [`enabled`](#enabled)
-* [`script_cfg`](#script_cfg)
-* [`sudo_cfg`](#sudo_cfg)
-* [`telegraf_cfg`](#telegraf_cfg)
+* [`enabled`](#-profile_lustre--telegraf--lnet_router_stats--enabled)
+* [`script_cfg`](#-profile_lustre--telegraf--lnet_router_stats--script_cfg)
+* [`sudo_cfg`](#-profile_lustre--telegraf--lnet_router_stats--sudo_cfg)
+* [`telegraf_cfg`](#-profile_lustre--telegraf--lnet_router_stats--telegraf_cfg)
 
-##### <a name="enabled"></a>`enabled`
+##### <a name="-profile_lustre--telegraf--lnet_router_stats--enabled"></a>`enabled`
 
 Data type: `Boolean`
 
 Enable or disable this health check
 
-##### <a name="script_cfg"></a>`script_cfg`
+##### <a name="-profile_lustre--telegraf--lnet_router_stats--script_cfg"></a>`script_cfg`
 
 Data type: `Hash`
 
 Hash that controls the values for the script config file. See data/common.yaml for examples
 
-##### <a name="sudo_cfg"></a>`sudo_cfg`
+##### <a name="-profile_lustre--telegraf--lnet_router_stats--sudo_cfg"></a>`sudo_cfg`
 
 Data type: `String`
 
 String setting sudo config for this lustre check
 
-##### <a name="telegraf_cfg"></a>`telegraf_cfg`
+##### <a name="-profile_lustre--telegraf--lnet_router_stats--telegraf_cfg"></a>`telegraf_cfg`
 
 Data type: `Hash`
 
 Hash of key:value pairs passed to telegraf::input as options
 
-### <a name="profile_lustretelegraflustre_client_health"></a>`profile_lustre::telegraf::lustre_client_health`
+### <a name="profile_lustre--telegraf--lustre_client_health"></a>`profile_lustre::telegraf::lustre_client_health`
 
 Telegraf Lustre client health checks
 
@@ -361,59 +390,43 @@ include profile_lustre::telegraf::lustre_client_health
 
 The following parameters are available in the `profile_lustre::telegraf::lustre_client_health` class:
 
-* [`enabled`](#enabled)
-* [`script_cfg`](#script_cfg)
-* [`telegraf_cfg`](#telegraf_cfg)
+* [`enabled`](#-profile_lustre--telegraf--lustre_client_health--enabled)
+* [`script_cfg`](#-profile_lustre--telegraf--lustre_client_health--script_cfg)
+* [`telegraf_cfg`](#-profile_lustre--telegraf--lustre_client_health--telegraf_cfg)
+* [`telegraf_lustre_client_check`](#-profile_lustre--telegraf--lustre_client_health--telegraf_lustre_client_check)
+* [`sudo_cfg`](#-profile_lustre--telegraf--lustre_client_health--sudo_cfg)
 
-##### <a name="enabled"></a>`enabled`
+##### <a name="-profile_lustre--telegraf--lustre_client_health--enabled"></a>`enabled`
 
 Data type: `Boolean`
 
 Enable or disable this health check
 
-##### <a name="script_cfg"></a>`script_cfg`
+##### <a name="-profile_lustre--telegraf--lustre_client_health--script_cfg"></a>`script_cfg`
 
 Data type: `Hash`
 
 Hash that controls the values for the script config file. See data/common.yaml for examples
 
-##### <a name="telegraf_cfg"></a>`telegraf_cfg`
+##### <a name="-profile_lustre--telegraf--lustre_client_health--telegraf_cfg"></a>`telegraf_cfg`
 
 Data type: `Hash`
 
 Hash of key:value pairs passed to telegraf::input as options
 
-### <a name="profile_lustretuning"></a>`profile_lustre::tuning`
+##### <a name="-profile_lustre--telegraf--lustre_client_health--telegraf_lustre_client_check"></a>`telegraf_lustre_client_check`
 
-Apply Lustre tuning parameters using lctl.
+Ensure that a sudoers entry is created for telegraf to run lctl
 
-#### Examples
+##### <a name="-profile_lustre--telegraf--lustre_client_health--sudo_cfg"></a>`sudo_cfg`
 
-##### 
+Data type: `String`
 
-```puppet
-include profile_lustre::tuning
-```
 
-#### Parameters
-
-The following parameters are available in the `profile_lustre::tuning` class:
-
-* [`params`](#params)
-
-##### <a name="params"></a>`params`
-
-Data type: `Hash`
-
-Hash of tuning parameters:
-  "<key1>": "<value1>"
-  "<key2>": "<value2">
-Note: Keys may contain * as a wildcard. E.g.:
-  "osc.*.max_pages_per_rpc": "4096"
 
 ## Defined types
 
-### <a name="profile_lustrebindmount_resource"></a>`profile_lustre::bindmount_resource`
+### <a name="profile_lustre--bindmount_resource"></a>`profile_lustre::bindmount_resource`
 
 Assumes that we are bindmounting from a mount or sub-directory of
 a mount.
@@ -434,11 +447,11 @@ profile_lustre::bindmount_resource { '/scratch':
 
 The following parameters are available in the `profile_lustre::bindmount_resource` defined type:
 
-* [`opts`](#opts)
-* [`src_mountpoint`](#src_mountpoint)
-* [`src_path`](#src_path)
+* [`opts`](#-profile_lustre--bindmount_resource--opts)
+* [`src_mountpoint`](#-profile_lustre--bindmount_resource--src_mountpoint)
+* [`src_path`](#-profile_lustre--bindmount_resource--src_path)
 
-##### <a name="opts"></a>`opts`
+##### <a name="-profile_lustre--bindmount_resource--opts"></a>`opts`
 
 Data type: `Optional[String]`
 
@@ -446,20 +459,20 @@ Mount options. MUST include 'bind'. (Optional.)
 
 Default value: `'defaults,bind,noauto,nodev,nosuid'`
 
-##### <a name="src_mountpoint"></a>`src_mountpoint`
+##### <a name="-profile_lustre--bindmount_resource--src_mountpoint"></a>`src_mountpoint`
 
 Data type: `String`
 
 The mount point of the source we are bindmounting from.
 
-##### <a name="src_path"></a>`src_path`
+##### <a name="-profile_lustre--bindmount_resource--src_path"></a>`src_path`
 
 Data type: `String`
 
 The location we are bindmounting from (either same as
 src_mountpoint or a sub-directory).
 
-### <a name="profile_lustrenativemount_resource"></a>`profile_lustre::nativemount_resource`
+### <a name="profile_lustre--nativemount_resource"></a>`profile_lustre::nativemount_resource`
 
 Mount Lustre filesystem on a directory
 
@@ -478,10 +491,10 @@ profile_lustre::nativemount_resource { '/mnt/mount':
 
 The following parameters are available in the `profile_lustre::nativemount_resource` defined type:
 
-* [`opts`](#opts)
-* [`src`](#src)
+* [`opts`](#-profile_lustre--nativemount_resource--opts)
+* [`src`](#-profile_lustre--nativemount_resource--src)
 
-##### <a name="opts"></a>`opts`
+##### <a name="-profile_lustre--nativemount_resource--opts"></a>`opts`
 
 Data type: `Optional[String]`
 
@@ -489,7 +502,7 @@ Data type: `Optional[String]`
 
 Default value: `'defaults,nodev,nosuid'`
 
-##### <a name="src"></a>`src`
+##### <a name="-profile_lustre--nativemount_resource--src"></a>`src`
 
 Data type: `String`
 

@@ -9,11 +9,16 @@
 # @param telegraf_cfg
 #   Hash of key:value pairs passed to telegraf::input as options
 #
+# @param telegraf_lustre_client_check
+#   Ensure that a sudoers entry is created for telegraf to run lctl
+#
+#
 # @example
 #   include profile_lustre::telegraf::lustre_client_health
 class profile_lustre::telegraf::lustre_client_health (
   Boolean $enabled,
   Hash    $script_cfg,
+  String  $sudo_cfg,
   Hash    $telegraf_cfg,
 ) {
   #
@@ -80,5 +85,12 @@ class profile_lustre::telegraf::lustre_client_health (
     owner   => 'root',
     group   => 'telegraf',
     mode    => '0740',
+  }
+  # Sudo config specific for this profile
+  #
+  sudo::conf { 'telegraf_lustre_client_check':
+    ensure   => $ensure_parm,
+    priority => 10,
+    content  => $sudo_cfg,
   }
 }
