@@ -198,12 +198,46 @@ include profile_lustre::module
 
 The following parameters are available in the `profile_lustre::module` class:
 
+* [`driver_config_client`](#-profile_lustre--module--driver_config_client)
+* [`driver_config_router`](#-profile_lustre--module--driver_config_router)
 * [`is_lnet_router`](#-profile_lustre--module--is_lnet_router)
 * [`lnet_conf_file`](#-profile_lustre--module--lnet_conf_file)
 * [`lnet_trigger_file`](#-profile_lustre--module--lnet_trigger_file)
 * [`local_networks`](#-profile_lustre--module--local_networks)
 * [`modprobe_lustre_conf_file`](#-profile_lustre--module--modprobe_lustre_conf_file)
 * [`remote_networks`](#-profile_lustre--module--remote_networks)
+
+##### <a name="-profile_lustre--module--driver_config_client"></a>`driver_config_client`
+
+Data type: `Hash`
+
+Hash to configure options in lustre.conf for clients
+
+Syntax:
+  driver:
+    key: value
+
+E.g.:
+  ksocklnd:
+    skip_mr_route_setup: 1
+  lnet:
+    dead_router_check_interval: 60
+
+##### <a name="-profile_lustre--module--driver_config_router"></a>`driver_config_router`
+
+Data type: `Hash`
+
+Hash to configure options in lustre.conf for routers
+
+Syntax:
+  driver:
+    key: value
+
+E.g.:
+  ksocklnd:
+    skip_mr_route_setup: 1
+  lnet:
+    dead_router_check_interval: 60
 
 ##### <a name="-profile_lustre--module--is_lnet_router"></a>`is_lnet_router`
 
