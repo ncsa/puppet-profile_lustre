@@ -1,2 +1,8 @@
 # lustre.conf: Managed by Puppet
 options lnet networks="<%= $profile_lustre::module::local_networks.map |$network, $data| { join([$network, "(", $data['interface'], ")"]) }.join(',') %>" forwarding=enabled
+
+<%- $profile_lustre::module::driver_config_router.each | $driver, $options | { -%>
+  <%- $options.each | $key, $value | { -%>
+options <%= $driver %> <%= $key %>=<%= $value %>
+  <%- } -%>
+<%- } -%>

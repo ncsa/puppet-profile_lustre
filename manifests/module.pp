@@ -1,5 +1,31 @@
 # @summary Configure and build lnet & lustre kernel modules
 #
+# @param driver_config_client
+#   Hash to configure options in lustre.conf for clients
+#
+#   Syntax:
+#     driver:
+#       key: value
+#
+#   E.g.:
+#     ksocklnd:
+#       skip_mr_route_setup: 1
+#     lnet:
+#       dead_router_check_interval: 60
+#
+# @param driver_config_router
+#   Hash to configure options in lustre.conf for routers
+#
+#   Syntax:
+#     driver:
+#       key: value
+#
+#   E.g.:
+#     ksocklnd:
+#       skip_mr_route_setup: 1
+#     lnet:
+#       dead_router_check_interval: 60
+#
 # @param is_lnet_router
 #   Is the node an LNet router or not?
 #
@@ -39,6 +65,8 @@
 #   include profile_lustre::module
 #
 class profile_lustre::module (
+  Hash    $driver_config_client,
+  Hash    $driver_config_router,
   Boolean $is_lnet_router,
   String  $lnet_conf_file,
   String  $lnet_trigger_file,
