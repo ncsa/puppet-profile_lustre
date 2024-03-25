@@ -27,6 +27,7 @@ profile_lustre::firewall::sources:
 
 profile_lustre::module::driver_config_client: {}
 profile_lustre::module::driver_config_router: {}
+profile_lustre::module::global_lnet_configs: {}
 profile_lustre::module::is_lnet_router: false
 profile_lustre::module::lnet_conf_file: "/etc/lnet.conf"
 profile_lustre::module::lnet_trigger_file: "/etc/lnet.trigger"
@@ -37,7 +38,8 @@ profile_lustre::module::lnet_trigger_file: "/etc/lnet.trigger"
 #   o2ib1:
 #     interface: "ib0"
 profile_lustre::module::modprobe_lustre_conf_file: "/etc/modprobe.d/lustre.conf"
-profile_lustre::module::remote_networks: {}
+profile_lustre::module::router_buffers: {}
+profile_lustre::module::routes: {}
 # EXAMPLE REMOTE_NETWORKS DATA
 # profile_lustre::module::remote_networks: {}
 #   o2ib0:

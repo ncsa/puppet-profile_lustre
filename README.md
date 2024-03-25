@@ -34,6 +34,55 @@ include ::profile_lustre::lnet_router
 
 ## Usage
 
+### Recent changes
+
+:warning: WARNING: v3.0.0 of this module introduces changes to names and structuring of some parameters:
+- changed:
+  - `profile_lustre::module::local_networks`
+  - `profile_lustre::module::routes` (fka 'remote_networks')
+- added:
+  - `profile_lustre::module::global_lnet_configs`
+  - `profile_lustre::module::router_buffers`
+
+Please see the following for more information:
+- example below
+- code or [REFERENCE.md](REFERENCE.md)
+
+:warning: WARNING: This module has a safeguard against accidentally reconfiguring LNet on a system that
+is in production. See [Reconfiguring LNet](#reconfiguring-lnet) for more information.
+
+### LNet parameters and configuration methods
+
+LNet configuration is applied by the `puppet_lustre::module` class. This class primarily relies on
+[Dynamic LNet Configuration](https://wiki.lustre.org/Dynamic_LNet_Configuration_and_lnetctl),
+using `lnetctl` to import from a YAML-formatted lnet.conf file. Where necessary, it also uses
+[Static LNet Configuration](https://wiki.lustre.org/Static_LNet_Configuration), in particular for driver-level
+configurations, which are placed in a lustre.conf file and processed earlier, when the lnet kernel module is loaded.
+
+To get an idea of the configuration options possible via lnet.conf, you can run the following on a node that is
+already configured (or see such example output in Lustre docs):
+```bash
+lnetctl export --backup
+```
+The sections of the lnet.conf file are populated according to the following parameters:
+|lnet.conf section|profile_lustre::module parameter(s)|
+|---|---|
+|net|local_networks|
+|route|routes|
+|routing|is_lnet_router|
+|buffers|router_buffers|
+|peer|N/A|
+|global|global_lnet_configs|
+
+Configuration via lustre.conf are limited to driver-level configuration, e.g.:
+```
+options ko2iblnd ...
+options ksocklnd ...
+```
+(See `profile_lustre::module::driver_config*` parameters.)
+
+### Typical usage
+
 The following parameters likely need to be set for any deployment:
 
 ```yaml
@@ -52,12 +101,18 @@ profile_lustre::install::yumrepo:
 # example only:
 profile_lustre::module::local_networks:
   tcp0:
-    interface: "eth1"
+    ## fka (String) "interface"
+    interfaces:  ## now an Array
+      - "eth1"
   o2ib1:
-    interface: "ib0"
-profile_lustre::module::remote_networks:
+    interfaces:
+      - "ib0"
+profile_lustre::module::routes:  ## fka "remote_networks"
   o2ib:
-    router_IPs: "172.28.16.[30-31]"
+    ## fka "router_IPs"
+    router_ips:  ## ranges like *.[30-31] no longer permitted; list each IP as an Array member
+      - "172.28.16.30"
+      - "172.28.16.31"
     router_net: "tcp0"
 
 profile_lustre::nativemounts::map:
@@ -100,7 +155,26 @@ profile_lustre::tuning::params:
 ...
 ```
 
-Recommendations and/or defaults TBD.
+### Reconfiguring LNet
+
+This profile includes a safeguard against accidently trying to reconfigure LNet in a production setting. There is
+a "trigger" file, `/etc/lnet.trigger` by default, that is created when Puppet configures LNet for the first
+time. Once it is present, Puppet will NOT try to reconfigure LNet even if changes are made to lnet.conf or
+lustre.conf.
+
+Additionally LNet should not be reconfigured when Lustre is mounted.
+
+In order to reconfigure LNet, an admin do something like:
+- take the node out of service
+- stop the Puppet service (`systemctl stop puppet`)
+- unmount Lustre (`umount -a -t lustre`)
+- unload Lustre kernel modules (`lustre_rmmod`)
+- remove the trigger file (`rm -f /etc/lnet.trigger`)
+- make sure the node is on the correct branch
+- apply changes using Puppet (`puppet agent -t`)
+- restart the Puppet service, if necessary (`systemctl start puppet`)
+
+Alternatively, a stateless node can just be rebooted and then Puppet can apply an updated config on boot.
 
 ### Telegraf Monitoring
 

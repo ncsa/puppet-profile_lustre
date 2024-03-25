@@ -12,7 +12,7 @@
 * [`profile_lustre::firewall`](#profile_lustre--firewall): A short summary of the purpose of this class
 * [`profile_lustre::install`](#profile_lustre--install): Install Lustre client
 * [`profile_lustre::lnet_router`](#profile_lustre--lnet_router): Manage Lustre for an LNet router
-* [`profile_lustre::module`](#profile_lustre--module): Configure and build lnet & lustre kernel modules
+* [`profile_lustre::module`](#profile_lustre--module): Configure LNet & Lustre kernel modules
 * [`profile_lustre::nativemounts`](#profile_lustre--nativemounts): Mount Lustre filesystems on the client
 * [`profile_lustre::service`](#profile_lustre--service): Configure the lnet service
 * [`profile_lustre::telegraf::lnet_router_stats`](#profile_lustre--telegraf--lnet_router_stats): Telegraf LNET router stats
@@ -184,7 +184,9 @@ include profile_lustre::lnet_router
 
 ### <a name="profile_lustre--module"></a>`profile_lustre::module`
 
-Configure and build lnet & lustre kernel modules
+This Puppet class primarily uses [Dynamic LNet Configuration](https://wiki.lustre.org/Dynamic_LNet_Configuration_and_lnetctl)
+by importing from an lnet.conf. Where necessary it uses [Static LNet Configuration](https://wiki.lustre.org/Static_LNet_Configuration),
+in particular for driver-level configurations, which are placed in a lustre.conf.
 
 #### Examples
 
@@ -200,18 +202,20 @@ The following parameters are available in the `profile_lustre::module` class:
 
 * [`driver_config_client`](#-profile_lustre--module--driver_config_client)
 * [`driver_config_router`](#-profile_lustre--module--driver_config_router)
+* [`global_lnet_configs`](#-profile_lustre--module--global_lnet_configs)
 * [`is_lnet_router`](#-profile_lustre--module--is_lnet_router)
 * [`lnet_conf_file`](#-profile_lustre--module--lnet_conf_file)
 * [`lnet_trigger_file`](#-profile_lustre--module--lnet_trigger_file)
 * [`local_networks`](#-profile_lustre--module--local_networks)
 * [`modprobe_lustre_conf_file`](#-profile_lustre--module--modprobe_lustre_conf_file)
-* [`remote_networks`](#-profile_lustre--module--remote_networks)
+* [`router_buffers`](#-profile_lustre--module--router_buffers)
+* [`routes`](#-profile_lustre--module--routes)
 
 ##### <a name="-profile_lustre--module--driver_config_client"></a>`driver_config_client`
 
 Data type: `Hash`
 
-Hash to configure options in lustre.conf for clients
+Hash to configure driver options (in lustre.conf) for Lustre clients
 
 Syntax:
   driver:
@@ -220,14 +224,12 @@ Syntax:
 E.g.:
   ksocklnd:
     skip_mr_route_setup: 1
-  lnet:
-    dead_router_check_interval: 60
 
 ##### <a name="-profile_lustre--module--driver_config_router"></a>`driver_config_router`
 
 Data type: `Hash`
 
-Hash to configure options in lustre.conf for routers
+Hash to configure driver options (in lustre.conf) for LNet routers
 
 Syntax:
   driver:
@@ -236,14 +238,20 @@ Syntax:
 E.g.:
   ksocklnd:
     skip_mr_route_setup: 1
-  lnet:
-    dead_router_check_interval: 60
+
+##### <a name="-profile_lustre--module--global_lnet_configs"></a>`global_lnet_configs`
+
+Data type: `Hash`
+
+Hash for "global" configs for LNet (in lnet.conf, "global:" section) with String values. E.g.:
+  numa_range: "0"
+  max_intf: "200"
 
 ##### <a name="-profile_lustre--module--is_lnet_router"></a>`is_lnet_router`
 
 Data type: `Boolean`
 
-Is the node an LNet router or not?
+Is the node an LNet router or not? Enables routing (via lnet.conf).
 
 ##### <a name="-profile_lustre--module--lnet_conf_file"></a>`lnet_conf_file`
 
@@ -256,41 +264,74 @@ Full path to lnet.conf file, e.g. "/etc/lnet.conf"
 Data type: `String`
 
 Full path to LNet trigger file (if this file is NOT present,
-Puppet will (re)configure Lnet).
+Puppet will attempt to (re)configure Lnet).
 
 ##### <a name="-profile_lustre--module--local_networks"></a>`local_networks`
 
 Data type: `Hash`
 
-Hash of data to configure local NIDs on the host, in this form:
-  <LOCAL_LND_1>:
-    interface: "<ifc for LOCAL_LND_1>"
+Hash of data to configure local NIDs on the host (via lnet.conf, "net:" section), in this form:
+  <LOCAL_LNET_1>:
+                interfaces:    Array of Strings
+                               - formerly a String named "interface:"
+                               - interfaces for this LNet
+    (optional): tunables:      Hash of params with String values
+                               - these are general tunables for this LNet
+    (optional): lnd_tunables:  Hash of params with String values
+                               - these are LND (Lustre Network Driver) tunables specific to this LNet
+    (optional): CPT:           String
+                               - specify the CPU Partition Table for this LNet
   ...
 E.g.:
   tcp0:
-    interface: "eth1"
+    interfaces: ["eth1"]
+    lnd_tunables:
+      conns_per_peer: "1"
+    tunables:
+      peer_timeout: "240"
+    CPT: "[0,1]"
   o2ib1:
-    interface: "ib0"
+    interfaces:
+      - "ib0"
+      - "ib1"
 
 ##### <a name="-profile_lustre--module--modprobe_lustre_conf_file"></a>`modprobe_lustre_conf_file`
 
 Data type: `String`
 
-Full path to modprobe lustre.conf file, e.g. "/etc/modprobe.d/lustre.conf"
+Full path to lustre.conf file, e.g. "/etc/modprobe.d/lustre.conf".
 
-##### <a name="-profile_lustre--module--remote_networks"></a>`remote_networks`
+##### <a name="-profile_lustre--module--router_buffers"></a>`router_buffers`
 
 Data type: `Hash`
 
-Hash of data to configure routes to reach emote networks, in this form:
-  <REMOTE_LND_A>:
-    router_IPs: "IP_or_IP_list" (in format suitable for lustre.conf)
-    router_net: "LND_for_router(s)"
+Hash of buffer sizes for LNet routers (via lnet.conf, "buffers:" section), usually of this form:
+  tiny: 2048
+  small: 16384
+  large: 1024
+
+##### <a name="-profile_lustre--module--routes"></a>`routes`
+
+Data type: `Hash`
+
+(fka remote_networks) Hash of data to configure routes to reach remote networks,
+(via lnet.conf, "route:" section) in this form:
+  <REMOTE_LNET_A>:
+               router_ips: "IP_or_IP_list" (IPs for gateways)
+               - formerly a String called "router_IPs", now an Array
+               - range shorthand (e.g., *.[30-31]) no longer allowed
+               router_net: "LND_for_router(s)" (LNDs for gateways)
+    (optional) params: Hash with String values for additional parameters
+               - any additional parameters for these routes (to this remote LNet)
   ...
 E.g.:
   o2ib0:
-    router_IPs: "172.28.16.[30-31]"
+    router_ips:
+      - "172.28.16.30"
+      - "172.28.16.31"
     router_net: "tcp0"
+    params:
+      hops: "-1"
 
 ### <a name="profile_lustre--nativemounts"></a>`profile_lustre::nativemounts`
 
