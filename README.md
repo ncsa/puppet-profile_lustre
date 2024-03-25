@@ -34,6 +34,8 @@ include ::profile_lustre::lnet_router
 
 ## Usage
 
+WARNING: v3 of this module introduces changes to names and structuring of some parameters.
+
 The following parameters likely need to be set for any deployment:
 
 ```yaml
@@ -52,12 +54,18 @@ profile_lustre::install::yumrepo:
 # example only:
 profile_lustre::module::local_networks:
   tcp0:
-    interface: "eth1"
+    ## fka (String) "interface"
+    interfaces:  ## now an Array
+      - "eth1"
   o2ib1:
-    interface: "ib0"
-profile_lustre::module::remote_networks:
+    interfaces:
+      - "ib0"
+profile_lustre::module::routes:  ## fka "remote_networks"
   o2ib:
-    router_IPs: "172.28.16.[30-31]"
+    ## fka "router_IPs"
+    router_ips:  ## ranges like *.[30-31] no longer permitted; list each IP as an Array member
+      - "172.28.16.30"
+      - "172.28.16.31"
     router_net: "tcp0"
 
 profile_lustre::nativemounts::map:

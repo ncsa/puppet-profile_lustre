@@ -1,0 +1,57 @@
+# lnet.conf: Managed by Puppet
+net:
+<% $profile_lustre::module::local_networks.map |$network, $data| { -%>
+    - net type: <%= $network %>
+      local NI(s):
+        - interfaces:
+<% $data['interfaces'].each |$index, $interface| { -%>
+              <%= $index %>: <%= $interface %>
+<% } -%> <%# end interfaces loop -%>
+          tunables:
+<% if $data['tunables'] { -%>
+<% $data['tunables'].each |$key, $value| { -%>
+              <%= $key %>: <%= $value %>
+<% } -%> <%# end tunables loop -%>
+<% } -%> <%# end tunables conditional -%>
+<% if $data['lnd_tunables'] { -%>
+          lnd tunables:
+<% $data['lnd_tunables'].each |$key, $value| { -%>
+              <%= $key %>: <%= $value %>
+<% } -%> <%# end lnd_tunables loop -%>
+<% } -%> <%# end lnd_tunables conditional -%>
+<% if $data['CPT'] { -%>
+          CPT: "<%= $data['CPT'] %>"
+<% } -%> <%# end CPT conditional -%>
+<% } -%> <%# end networks loop -%>
+<% if $profile_lustre::module::is_lnet_router { -%>
+routing:
+    enable: 1
+<% if $profile_lustre::module::router_buffers.size > 0 { -%>
+buffers:
+<% $profile_lustre::module::router_buffers.each |$key, $value| { -%>
+    <%= $key %>: <%= $value %>
+<% } -%> <%# end router buffers loop-%>
+<% } -%> <%# end router buffers conditional -%>
+<% } -%> <%# end LNet router conditional -%>
+<% if ! $profile_lustre::module::is_lnet_router { -%>
+<% if $profile_lustre::module::routes.size > 0 { -%>
+route:
+<% $profile_lustre::module::routes.each |$remote_network, $data| { -%>
+<% $data['router_ips'].each |$index, $ip| { -%>
+    - net: <%= $remote_network %>
+      gateway: <%= $ip %>@<%= $data['router_net'] %>
+<% if $data['params'] { -%>
+<% $data['params'].each |$key, $value| { -%>
+      <%= $key %>: <%= $value %>
+<% } -%> <%# end route params loop -%>
+<% } -%> <%# end route params conditional -%>
+<% } -%> <%# end router_IPs loop -%>
+<% } -%> <%# end routes loop -%>
+<% } -%> <%# end routes conditional -%>
+<% } -%> <%# end NOT LNet router conditional -%>
+global:
+<% if $profile_lustre::module::global_lnet_configs.size > 0 { -%>
+<% $profile_lustre::module::global_lnet_configs.each |$key, $value| { -%>
+    <%= $key %>: <%= $value %>
+<% } -%> <%# end global loop -%>
+<% } -%> <%# end global conditional -%>

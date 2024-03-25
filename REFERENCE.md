@@ -200,12 +200,14 @@ The following parameters are available in the `profile_lustre::module` class:
 
 * [`driver_config_client`](#-profile_lustre--module--driver_config_client)
 * [`driver_config_router`](#-profile_lustre--module--driver_config_router)
+* [`global_lnet_configs`](#-profile_lustre--module--global_lnet_configs)
 * [`is_lnet_router`](#-profile_lustre--module--is_lnet_router)
 * [`lnet_conf_file`](#-profile_lustre--module--lnet_conf_file)
 * [`lnet_trigger_file`](#-profile_lustre--module--lnet_trigger_file)
 * [`local_networks`](#-profile_lustre--module--local_networks)
 * [`modprobe_lustre_conf_file`](#-profile_lustre--module--modprobe_lustre_conf_file)
-* [`remote_networks`](#-profile_lustre--module--remote_networks)
+* [`router_buffers`](#-profile_lustre--module--router_buffers)
+* [`routes`](#-profile_lustre--module--routes)
 
 ##### <a name="-profile_lustre--module--driver_config_client"></a>`driver_config_client`
 
@@ -239,6 +241,14 @@ E.g.:
   lnet:
     dead_router_check_interval: 60
 
+##### <a name="-profile_lustre--module--global_lnet_configs"></a>`global_lnet_configs`
+
+Data type: `Hash`
+
+Hash for "global" configs for lnet with string values. E.g.:
+  numa_range: "0"
+  max_intf: "200"
+
 ##### <a name="-profile_lustre--module--is_lnet_router"></a>`is_lnet_router`
 
 Data type: `Boolean`
@@ -256,41 +266,64 @@ Full path to lnet.conf file, e.g. "/etc/lnet.conf"
 Data type: `String`
 
 Full path to LNet trigger file (if this file is NOT present,
-Puppet will (re)configure Lnet).
+Puppet will attempt to (re)configure Lnet).
 
 ##### <a name="-profile_lustre--module--local_networks"></a>`local_networks`
 
 Data type: `Hash`
 
 Hash of data to configure local NIDs on the host, in this form:
-  <LOCAL_LND_1>:
-    interface: "<ifc for LOCAL_LND_1>"
+  <LOCAL_LNET_1>:
+                interfaces:    array of strings
+    (optional): tunables:      hash of params with string values
+    (optional): lnd_tunables:  hash of params with string values
+    (optional): CTP:           string
   ...
 E.g.:
   tcp0:
-    interface: "eth1"
+    interfaces: ["eth1"]
+    lnd_tunables:
+      conns_per_peer: "1"
+    tunables:
+      peer_timeout: "240"
+    CPT: "[0,1]"
   o2ib1:
-    interface: "ib0"
+    interfaces:
+      - "ib0"
+      - "ib1"
 
 ##### <a name="-profile_lustre--module--modprobe_lustre_conf_file"></a>`modprobe_lustre_conf_file`
 
 Data type: `String`
 
-Full path to modprobe lustre.conf file, e.g. "/etc/modprobe.d/lustre.conf"
+Full path to lustre.conf file, e.g. "/etc/modprobe.d/lustre.conf".
 
-##### <a name="-profile_lustre--module--remote_networks"></a>`remote_networks`
+##### <a name="-profile_lustre--module--router_buffers"></a>`router_buffers`
 
 Data type: `Hash`
 
-Hash of data to configure routes to reach emote networks, in this form:
-  <REMOTE_LND_A>:
-    router_IPs: "IP_or_IP_list" (in format suitable for lustre.conf)
-    router_net: "LND_for_router(s)"
+Hash of buffer sizes for LNet routers, usually of this form:
+  tiny: 2048
+  small: 16384
+  large: 1024
+
+##### <a name="-profile_lustre--module--routes"></a>`routes`
+
+Data type: `Hash`
+
+(fka remote_networks) Hash of data to configure routes to reach remote networks,
+in this form:
+  <REMOTE_LNET_A>:
+               router_ips: "IP_or_IP_list" (in format suitable for lustre.conf)
+               router_net: "LND_for_router(s)"
+    (optional) params: hash with string values for additional parameters
   ...
 E.g.:
   o2ib0:
-    router_IPs: "172.28.16.[30-31]"
+    router_ips: "172.28.16.[30-31]"
     router_net: "tcp0"
+    params:
+      hops: "-1"
 
 ### <a name="profile_lustre--nativemounts"></a>`profile_lustre::nativemounts`
 
