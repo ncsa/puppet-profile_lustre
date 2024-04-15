@@ -86,4 +86,4 @@ profile_lustre::telegraf::lustre_client_health::telegraf_cfg:
 profile_lustre::telegraf::lustre_client_health::sudo_cfg: |
   Defaults:telegraf !mail_always
   Defaults:telegraf !requiretty
-  telegraf ALL = NOPASSWD: NOMAIL: /usr/sbin/lctl *
+  telegraf ALL = NOPASSWD: NOMAIL: /usr/sbin/lctl *,/usr/sbin/lnetctl *
