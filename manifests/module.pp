@@ -138,13 +138,17 @@ class profile_lustre::module (
   }
 
   # CONFIGURE LNET
-  $configure_lustre_command = "modprobe lnet && lnetctl lnet configure && \
-    lnetctl import ${lnet_conf_file} && \
-    echo 'If this file is deleted Puppet will reconfigure LNet' > ${lnet_trigger_file}"
+
+  ## when LNet is (re)configured, write a trigger file containing the last reboot time
+  $configure_lustre_command = "umount -a -t lustre && lustre_rmmod && \
+    modprobe lnet && lnetctl lnet configure && lnetctl import ${lnet_conf_file} && \
+    echo 'If this file is deleted or contains an older system boot time Puppet will unmount Lustre and reconfigure LNet' > ${lnet_trigger_file} && \
+    uptime -s >> ${lnet_trigger_file}"
+
+  ## configure LNet, but only if the trigger file is missing or has a different last reboot time
   exec { 'configure_lustre':
     command => $configure_lustre_command,
-    creates => $lnet_trigger_file,
-    unless  => "test -f ${lnet_trigger_file}",
+    unless  => "egrep -q \"$(uptime -s)\" ${lnet_trigger_file}",
     path    => ['/usr/bin', '/usr/sbin', '/sbin'],
     require => [
       File[$modprobe_lustre_conf_file],

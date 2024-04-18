@@ -36,6 +36,30 @@ include ::profile_lustre::lnet_router
 
 ### Recent changes
 
+:warning: WARNING: v3.2.0 of this module introduces a change to the "trigger" file (`/etc/lnet.trigger`
+by default). When Puppet (re)configures LNet it will now not only create this file but also put the
+system boot time in the file. On subsequent Puppet runs, if the file is missing OR if the system
+boot time recorded in the file is different than the actual system boot time, then Puppet will
+necessarily attempt to unmount Lustre and unload Lustre/LNet kernel modules, and then (re)configure
+LNet.
+
+(This change in the trigger file is necessary to support stateful systems.)
+
+When introducing this updated module into a cluster with booted production systems admins may want to
+"preseed" each node's system boot time into their trigger file to prevent Puppet from (unmounting Lustre
+and unloading Lustre/LNet kernel modules and) reconfiguring LNet. This can be done by running these commands
+on each node:
+# update the message in the trigger file, to avoid potential confusion due to the behavior change
+`echo "If this file is deleted or contains an older system boot time Puppet will unmount Lustre and reconfigure LNet" > /etc/lnet.trigger`
+# put the system's boot time in the trigger file
+`uptime -s >> /etc/lnet.trigger'
+
+NOTE: Time-related commands can sometimes produce varying output formats depending on the shell context.
+E.g., `who -b` produces different output when run via xdsh as compared to plain ssh or locally (and this
+is true even when Puppet is run via xdsh). But `uptime -s` produces consistent output in all of these
+contexts. That being said, if admins desire to use some other parallel shell command they should be aware
+that varying output format could produce issues and test carefully.
+
 :warning: WARNING: v3.0.0 of this module introduces changes to names and structuring of some parameters:
 - changed:
   - `profile_lustre::module::local_networks`
@@ -157,12 +181,13 @@ profile_lustre::tuning::params:
 
 ### Reconfiguring LNet
 
-This profile includes a safeguard against accidently trying to reconfigure LNet in a production setting. There is
-a "trigger" file, `/etc/lnet.trigger` by default, that is created when Puppet configures LNet for the first
-time. Once it is present, Puppet will NOT try to reconfigure LNet even if changes are made to lnet.conf or
-lustre.conf.
-
-Additionally LNet should not be reconfigured when Lustre is mounted.
+This profile includes a safeguard against accidently trying to reconfigure LNet in a production setting when
+LNet is already configured and may be routing or supporting active Lustre mounts. Puppet creates a "trigger"
+file (`/etc/lnet.trigger` by default) when it (re)configures LNet. The system boot time is also recorded in
+this trigger file. Puppet will NOT try to reconfigure LNet (even if changes are made to lnet.conf or
+lustre.conf UNLESS the trigger file is removed or the actual system boot time is different than the system
+boot time in the trigger file. If Puppet determines that LNet should be (re)configured, it will necessarily
+first attempt to unmount Lustre and unconfigure LNet (unload Lustre kernel modules).
 
 In order to reconfigure LNet, an admin do something like:
 - take the node out of service
