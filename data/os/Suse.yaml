@@ -1,0 +1,5 @@
+---
+profile_lustre::install::required_pkgs:
+  - "kmod-lustre-client"
+  - "lustre-client"
+profile_lustre::install::yumrepo: {}

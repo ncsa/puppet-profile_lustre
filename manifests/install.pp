@@ -12,11 +12,13 @@ class profile_lustre::install (
   Array[String] $required_pkgs,
   Hash            $yumrepo,
 ) {
-  $yumrepo_defaults = {
-    ensure  => present,
-    enabled => true,
+  if ( ! empty( $yumrepo ) ) {
+    $yumrepo_defaults = {
+      ensure  => present,
+      enabled => true,
+    }
+    ensure_resources( 'yumrepo', $yumrepo, $yumrepo_defaults )
   }
-  ensure_resources( 'yumrepo', $yumrepo, $yumrepo_defaults )
 
   $packages_defaults = {
   }
