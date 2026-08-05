@@ -5,6 +5,9 @@
 
 source <%= $source_path %>
 
+LCTL_CMD="sudo /usr/sbin/lctl"
+LNETCTL_CMD="sudo /usr/sbin/lnetctl"
+
 ## Tmp File Mgmt
 rm -f /tmp/tig_lustre*
 
@@ -14,7 +17,7 @@ tfile2=$(mktemp /tmp/tig_lustre2.XXXXXXX)
 ## Lustre Ping
 for m in ${mgs[@]}
 do
-        lping=$(sudo /usr/sbin/lctl ping ${m} | head -n 1)
+        lping=$(${LCTL_CMD} ping ${m} | head -n 1)
 
         if [ -z $(echo ${lping} | grep -i error) ]; then
                 echo "lctl_ping,target=${m} ping_error=0"
@@ -72,18 +75,18 @@ done
 
 for f in ${filesystems[@]}
 do
-        mdc_evicted=$(sudo /usr/sbin/lctl dl | grep mdc | grep ${f} | grep -v UP | wc -l)
-        osc_evicted=$(sudo /usr/sbin/lctl dl | grep osc | grep ${f} | grep -v UP | wc -l)
+        mdc_evicted=$(${LCTL_CMD} dl | grep mdc | grep ${f} | grep -v UP | wc -l)
+        osc_evicted=$(${LCTL_CMD} dl | grep osc | grep ${f} | grep -v UP | wc -l)
         echo "lustre_client_eviction,fs=${f} osc_evicted=${osc_evicted},mdc_evicted=${mdc_evicted}"
 done
 
 counter_types=(statistics sent_stats received_stats dropped_stats health_stats)
 
-nets=($(sudo /usr/sbin/lnetctl net show | grep "net\ type:" | grep -v ":\ lo" | awk '{print $NF}' | xargs))
+nets=($(${LNETCTL_CMD} net show | grep "net\ type:" | grep -v ":\ lo" | awk '{print $NF}' | xargs))
 
 for n in ${nets[@]}
 do
-        sudo /usr/sbin/lnetctl net show --net ${n} -v 3 | sed 's/health\ /health_/' | sed 's/no\ route/no_route/' > "${tfile1}"
+        ${LNETCTL_CMD} net show --net ${n} -v 3 | sed 's/health\ /health_/' | sed 's/no\ route/no_route/' > "${tfile1}"
         interfaces=($(grep -A1 interfaces "${tfile1}" | grep "0:" | awk '{print $NF}' | xargs))
         for i in ${interfaces[@]}
         do
@@ -109,8 +112,8 @@ done
 
 for f in ${filesystems[@]}
 do
-        sudo /usr/sbin/lctl get_param mdc.${f}-*.rpc_stats > ${tfile1}
-        sudo /usr/sbin/lctl get_param osc.${f}-*.rpc_stats > ${tfile2}
+        ${LCTL_CMD} get_param mdc.${f}-*.rpc_stats > ${tfile1}
+        ${LCTL_CMD} get_param osc.${f}-*.rpc_stats > ${tfile2}
 
         mdc_read_rpc_in_flight=$(grep "read RPCs in flight" ${tfile1} | awk '{print $5}' | paste -sd+ | bc)
         mdc_write_rpc_in_flight=$(grep "write RPCs in flight" ${tfile1} | awk '{print $5}' | paste -sd+ | bc)
@@ -125,8 +128,8 @@ do
 
         echo "lustre_client_rpc_stats,fs=${f} mdc_read_rpc_in_flight=${mdc_read_rpc_in_flight},mdc_write_rpc_in_flight=${mdc_write_rpc_in_flight},mdc_pending_read_pages=${mdc_pending_read_pages},mdc_pending_write_pages=${mdc_pending_write_pages},osc_read_rpc_in_flight=${osc_read_rpc_in_flight},osc_write_rpc_in_flight=${osc_write_rpc_in_flight},osc_dio_rpcs_in_flight=${osc_dio_rpcs_in_flight},osc_pending_read_pages=${osc_pending_read_pages},osc_pending_write_page=${osc_pending_write_pages}"
 
-        sudo /usr/sbin/lctl get_param mdc.${f}-*.timeouts > ${tfile1}
-        sudo /usr/sbin/lctl get_param osc.${f}-*.timeouts > ${tfile2}
+        ${LCTL_CMD} get_param mdc.${f}-*.timeouts > ${tfile1}
+        ${LCTL_CMD} get_param osc.${f}-*.timeouts > ${tfile2}
 
         mdc_avg_reply_time=$(cat ${tfile1} | grep "last reply" | cut -d' ' -f 5 | sed 's/s//g' | awk '{sum+=$1} END {print sum/NR}')
         mdc_max_reply_time=$(cat ${tfile1} | grep "last reply" | cut -d' ' -f 5 | sed 's/s//g' | sort -un | tail -n 1)
@@ -137,15 +140,15 @@ do
 
         echo "lustre_client_target_timeout,fs=${f} mdc_avg_reply_time=${mdc_avg_reply_time},mdc_max_reply_time=${mdc_max_reply_time},mdc_median_reply_time=${mdc_median_reply_time},osc_avg_reply_time=${osc_avg_reply_time},osc_max_reply_time=${osc_max_reply_time},osc_median_reply_time=${osc_median_reply_time}"
 
-        sudo /usr/sbin/lctl get_param llite.${f}-*.stats > ${tfile1}
+        ${LCTL_CMD} get_param llite.${f}-*.stats > ${tfile1}
         stats=$(cat ${tfile1} | grep -v time | awk '$7 != "" {print $1" "$7}' | awk '{sums[$1]+=$2} END{for (i in sums) print i, sums[i]}' | sort | sed 's/\ /=/' | tr '\n' ',' | sed 's/,$//')
         echo "lustre_client_clientside_perf_stats,fs=${f} ${stats}"
 
-        sudo /usr/sbin/lctl get_param ldlm.namespaces.${f}-*.pool.stats > ${tfile1}
+        ${LCTL_CMD} get_param ldlm.namespaces.${f}-*.pool.stats > ${tfile1}
         stats=$(cat ${tfile1} | grep -v time | grep -v namespaces | sort -k1 | awk '$7 != "" {print $1" "$7}' | awk '{sums[$1]+=$2} END{for (i in sums) print i, sums[i]}' | sort | sed 's/\ /=/' | tr '\n' ',' | sed 's/,$//')
         echo "lustre_client_ldlm_pool_stats,fs=${f} ${stats}"
 
-        sudo /usr/sbin/lctl get_param ldlm.namespaces.${f}-*.resource_count > ${tfile1}
+        ${LCTL_CMD} get_param ldlm.namespaces.${f}-*.resource_count > ${tfile1}
         locks=$(cat ${tfile1} | cut -d'=' -f 2 | paste -sd+ | bc)
         echo "lustre_client_ldlm_resource_stats,fs=${f} locks=${locks}"
 done
