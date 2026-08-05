@@ -46,6 +46,39 @@ done
 for f in ${fs[@]}
 do
         check=$(grep $f /proc/mounts | grep lustre)
+                if [ -n "$check" ]; then
+                        #It's in /proc/mounts
+                        proc_check=0
+                else
+                        proc_check=
+                fi
+        stat=$(stat ${files[0]})
+        if [ -n "$stat" ]; then
+                #We can stat a file
+                stat_check=0
+        else
+                stat_check=1
+        fi
+        if [ $proc_check -eq 0 ] && [ $stat_check -eq 0 ]; then
+                #All is healthy
+                echo "mountcheck,fs=${f} presence=1"
+        else
+                echo "mountcheck,fs=${f} presence=0"
+        fi
+
+done
+
+## Target Eviction Check
+
+for f in ${filesystems[@]}
+do
+        mdc_evicted=$(/usr/sbin/lctl dl | grep mdc | grep ${f} | grep -v UP | wc -l)
+        osc_evicted=$(/usr/sbin/lctl dl | grep osc | grep ${f} | grep -v UP | wc -l)
+        echo "lustre_client_eviction,fs=${f} osc_evicted=${osc_evicted},mdc_evicted=${mdc_evicted}"
+done
+
+counter_types=(statistics sent_stats received_stats dropped_stats health_stats)
+
 nets=($(sudo /usr/sbin/lnetctl net show | grep "net\ type:" | grep -v ":\ lo" | awk '{print $NF}' | xargs))
 
 for n in ${nets[@]}
@@ -103,7 +136,6 @@ do
         osc_median_reply_time=$(cat ${tfile2} | grep "last reply" | cut -d' ' -f 5 | sed 's/s//g' | awk '{a[NR]=$1} END {asort(a); if (NR%2==1) print a[(NR+1)/2]; else print (a[NR/2]+a[NR/2+1])/2}')
 
         echo "lustre_client_target_timeout,fs=${f} mdc_avg_reply_time=${mdc_avg_reply_time},mdc_max_reply_time=${mdc_max_reply_time},mdc_median_reply_time=${mdc_median_reply_time},osc_avg_reply_time=${osc_avg_reply_time},osc_max_reply_time=${osc_max_reply_time},osc_median_reply_time=${osc_median_reply_time}"
-done
 
         /usr/sbin/lctl get_param llite.${f}-*.stats > ${tfile1}
         stats=$(cat ${tfile1} | grep -v time | awk '$7 != "" {print $1" "$7}' | awk '{sums[$1]+=$2} END{for (i in sums) print i, sums[i]}' | sort | sed 's/\ /=/' | tr '\n' ',' | sed 's/,$//')
@@ -116,6 +148,7 @@ done
         /usr/sbin/lctl get_param ldlm.namespaces.${f}-*.resource_count > ${tfile1}
         locks=$(cat ${tfile1} | cut -d'=' -f 2 | paste -sd+ | bc)
         echo "lustre_client_ldlm_resource_stats,fs=${f} locks=${locks}"
+done
 
 ## Cleanup
 rm -f ${tfile1} ${tfile2}
