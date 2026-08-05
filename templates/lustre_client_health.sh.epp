@@ -5,153 +5,255 @@
 
 source <%= $source_path %>
 
-LCTL_CMD="sudo /usr/sbin/lctl"
-LNETCTL_CMD="sudo /usr/sbin/lnetctl"
-
-## Tmp File Mgmt
-rm -f /tmp/tig_lustre*
-
-tfile1=$(mktemp /tmp/tig_lustre1.XXXXXX)
-tfile2=$(mktemp /tmp/tig_lustre2.XXXXXXX)
-
 ## Lustre Ping
 for m in ${mgs[@]}
 do
-        lping=$(${LCTL_CMD} ping ${m} | head -n 1)
+	lping=$(sudo /usr/sbin/lctl ping ${m} | head -n 1)
 
-        if [ -z $(echo ${lping} | grep -i error) ]; then
-                echo "lctl_ping,target=${m} ping_error=0"
-        else
-                echo "lctl_ping,target=${m} ping_error=1"
-        fi
+	if [ -z $(echo ${lping} | grep -i error) ]; then
+		echo "lctl_ping,target=${m} ping_error=0"
+	else
+		echo "lctl_ping,target=${m} ping_error=1"
+	fi
 done
 
 ## FS Responsive Test ##
+tfile1=$(mktemp /tmp/ls.XXXXXX)
+tfile2=$(mktemp /tmp/stat.XXXXXXX)
+
 for p in ${paths[@]}
 do
-        { time ls ${p} ; } 2> ${tfile1} 1> /dev/null
-        min=$(cat ${tfile1} | grep real | awk '{print $2}' | cut -d'm' -f 1)
-        sec=$(cat ${tfile1} | grep real | awk '{print $2}' | cut -d'm' -f 2 | cut -d's' -f 1)
-        time=$( bc -l <<<"60*$min + $sec" )
-        echo fs_ls_time,path=${p} duration=${time}
+	{ time ls ${p} ; } 2> ${tfile1} 1> /dev/null
+	min=$(cat ${tfile1} | grep real | awk '{print $2}' | cut -d'm' -f 1)
+	sec=$(cat ${tfile1} | grep real | awk '{print $2}' | cut -d'm' -f 2 | cut -d's' -f 1)
+	time=$( bc -l <<<"60*$min + $sec" )
+	echo fs_ls_time,path=${p} duration=${time}
 done
 
 for f in ${files[@]}
 do
-        { time stat ${f} ; } 2> ${tfile2} 1> /dev/null
-        min=$(cat ${tfile2} | grep real | awk '{print $2}' | cut -d'm' -f 1)
-        sec=$(cat ${tfile2} | grep real | awk '{print $2}' | cut -d'm' -f 2 | cut -d's' -f 1)
-        time=$( bc -l <<<"60*$min + $sec" )
-        echo fs_stat_time,path=${f} duration=${time}
+	{ time stat ${f} ; } 2> ${tfile2} 1> /dev/null
+	min=$(cat ${tfile2} | grep real | awk '{print $2}' | cut -d'm' -f 1)
+	sec=$(cat ${tfile2} | grep real | awk '{print $2}' | cut -d'm' -f 2 | cut -d's' -f 1)
+	time=$( bc -l <<<"60*$min + $sec" )
+	echo fs_stat_time,path=${f} duration=${time}
 done
 
-## FS Mount Health Check
+rm -rf ${tfile1}
+rm -rf ${tfile2}
+
+## FS Mount Check
 for f in ${fs[@]}
 do
         check=$(grep $f /proc/mounts | grep lustre)
                 if [ -n "$check" ]; then
-                        #It's in /proc/mounts
-                        proc_check=0
-                else
-                        proc_check=
-                fi
-        stat=$(stat ${files[0]})
-        if [ -n "$stat" ]; then
-                #We can stat a file
-                stat_check=0
-        else
-                stat_check=1
-        fi
-        if [ $proc_check -eq 0 ] && [ $stat_check -eq 0 ]; then
-                #All is healthy
-                echo "mountcheck,fs=${f} presence=1"
-        else
-                echo "mountcheck,fs=${f} presence=0"
-        fi
+			#It's in /proc/mounts
+                	proc_check=0
+		else
+			proc_check=1
+		fi
+	stat=$(stat ${files[0]})
+	if [ -n "$stat" ]; then
+		#We can stat a file
+		stat_check=0
+	else
+		stat_check=1
+	fi
+	if [ $proc_check -eq 0 ] && [ $stat_check -eq 0 ]; then
+		#All is healthy
+		echo "mountcheck,fs=${f} presence=1"
+	else
+		echo "mountcheck,fs=${f} presence=0"
+	fi
 
 done
 
-## Target Eviction Check
+## MDT/OST Activity
+while IFS= read -r line; do
+	IFS=" " read -r target active_string <<< "${line}"
+	if [ "${active_string}" == "ACTIVE" ]; then
+		active=1
+	else
+		active=0
+	fi
+	echo "lfs_mdt_ost_check,target=${target} active=${active},active_string=\"${active_string}\""
+done < <(lfs mdts | awk '{print $2" "$3}' | sort -u | sed '/^[[:space:]]*$/d')
 
-for f in ${filesystems[@]}
-do
-        mdc_evicted=$(${LCTL_CMD} dl | grep mdc | grep ${f} | grep -v UP | wc -l)
-        osc_evicted=$(${LCTL_CMD} dl | grep osc | grep ${f} | grep -v UP | wc -l)
-        echo "lustre_client_eviction,fs=${f} osc_evicted=${osc_evicted},mdc_evicted=${mdc_evicted}"
-done
+while IFS= read -r line; do
+        IFS=" " read -r target active_string <<< "${line}"
+        if [ "${active_string}" == "ACTIVE" ]; then
+                active=1
+        else
+                active=0
+        fi
+        echo "lfs_mdt_ost_check,target=${target} active=${active},active_string=\"${active_string}\""
+done < <(lfs osts | awk '{print $2" "$3}' | sort -u | sed '/^[[:space:]]*$/d')
 
+tfile=$(mktemp /tmp/lnet.XXXXXXX)
 counter_types=(statistics sent_stats received_stats dropped_stats health_stats)
 
-nets=($(${LNETCTL_CMD} net show | grep "net\ type:" | grep -v ":\ lo" | awk '{print $NF}' | xargs))
+nets=($(sudo /usr/sbin/lnetctl net show | grep "net\ type:" | grep -v ":\ lo" | awk '{print $NF}' | xargs))
 
 for n in ${nets[@]}
 do
-        ${LNETCTL_CMD} net show --net ${n} -v 3 | sed 's/health\ /health_/' | sed 's/no\ route/no_route/' > "${tfile1}"
-        interfaces=($(grep -A1 interfaces "${tfile1}" | grep "0:" | awk '{print $NF}' | xargs))
-        for i in ${interfaces[@]}
-        do
-                status=$(grep -B2 ${i} ${tfile1} | grep status | awk '{print $NF}')
-                if [ "${status}" == "up" ]; then
-                        echo "lnet_detail_stats,net=${n},interface=${i},counter_type=status state=\"${status}\",is_up=1"
-                else
-                        echo "lnet_detail_stats,net=${n},interface=${i},counter_type=status state=\"${status}\",is_up=0"
-                fi
-                for c in ${counter_types[@]}
-                do
-                        if [ ${c} == "statistics" ]; then
-                                stats_line=$(grep -A 31 "0: ${i}" "${tfile1}" | grep -A 3 "statistics" | tail -n +2 | sed 's/:\ /=/' | xargs | sed 's/\ /,/g')
-                        elif [ ${c} == "health_stats" ]; then
-                                stats_line=$(grep -A 31 "0: ${i}" "${tfile1}" | grep -A 8 "health_stats" | tail -n +2 | sed 's/:\ /=/' | xargs | sed 's/\ /,/g')
-                        else
-                                stats_line=$(grep -A 31 "0: ${i}" "${tfile1}" | grep -A 5 "${c}" | tail -n +2 | sed 's/:\ /=/' | xargs | sed 's/\ /,/g')
-                        fi
-                        echo "lustre_client_lnet_stats,net=${n},interface=${i},counter_type=${c} ${stats_line}"
-                done
-        done
+	sudo /usr/sbin/lnetctl net show --net ${n} -v 3 | sed 's/health\ /health_/' | sed 's/no\ route/no_route/' > "${tfile}"
+	interfaces=($(grep -A1 interfaces "${tfile}" | grep "0:" | awk '{print $NF}' | xargs))
+	for i in ${interfaces[@]}
+	do
+		status=$(grep -B2 ${i} ${tfile} | grep status | awk '{print $NF}')
+		if [ "${status}" == "up" ]; then
+			echo "lnet_detail_stats,net=${n},interface=${i},counter_type=status state=\"${status}\",is_up=1"
+		else
+			echo "lnet_detail_stats,net=${n},interface=${i},counter_type=status state=\"${status}\",is_up=0"
+		fi
+		for c in ${counter_types[@]}
+		do
+			if [ ${c} == "statistics" ]; then
+				stats_line=$(grep -A 31 "0: ${i}" "${tfile}" | grep -A 3 "statistics" | tail -n +2 | sed 's/:\ /=/' | xargs | sed 's/\ /,/g')
+			elif [ ${c} == "health_stats" ]; then
+				stats_line=$(grep -A 31 "0: ${i}" "${tfile}" | grep -A 8 "health_stats" | tail -n +2 | sed 's/:\ /=/' | xargs | sed 's/\ /,/g')
+			else
+				stats_line=$(grep -A 31 "0: ${i}" "${tfile}" | grep -A 5 "${c}" | tail -n +2 | sed 's/:\ /=/' | xargs | sed 's/\ /,/g')
+			fi
+			echo "lnet_detail_stats,net=${n},interface=${i},counter_type=${c} ${stats_line}"
+		done
+	done
 done
 
-for f in ${filesystems[@]}
+rm -rf "${tfile}"
+
+tfile=$(mktemp /tmp/rpcs.XXXXXXX)
+
+file_systems=$(ls /proc/fs/lustre/osc/ | cut -d'-' -f 1 | sort -u | xargs)
+for f in ${file_systems[@]}
 do
-        ${LCTL_CMD} get_param mdc.${f}-*.rpc_stats > ${tfile1}
-        ${LCTL_CMD} get_param osc.${f}-*.rpc_stats > ${tfile2}
+	pools=($(/usr/sbin/lctl pool_list ${f} | tail -n +2))
+	if (( ${#pools[@]} )); then
+		for p in ${pools[@]}
+		do
+			lctl pool_list ${p} | tail -n +2 | sed "s/^/${p}:/" | sed 's/_UUID//' >> "${tfile}".pools
+		done
+		are_pools=1
+	else
+		are_pools=0
+	fi
+	rrpc_inflight=0
+	wrpc_inflight=0
+	targets=($(ls /proc/fs/lustre/osc/ | grep "${f}-"))
+	for t in ${targets[@]}
+	do
+		cleant=$(echo ${t} | cut -d'-' -f 1-2)
+		if [ ${are_pools} -eq 1 ]; then
+			pool=$(grep "${cleant}" "${tfile}".pools | cut -d':' -f 1 | cut -d'.' -f 2)
+		else
+			pool=all
+		fi
+		cat /proc/fs/lustre/osc/${t}/rpc_stats > "${tfile}"
+		read -r n_rrpc_inflight n_wrpc_inflight <<< $(grep "RPCs in flight" ${tfile} | awk '{print $NF}' | xargs)
+		rrpc_inflight=$((n_rrpc_inflight+rrpc_inflight))
+		wrpc_inflight=$((n_wrpc_inflight+wrpc_inflight))
 
-        mdc_read_rpc_in_flight=$(grep "read RPCs in flight" ${tfile1} | awk '{print $5}' | paste -sd+ | bc)
-        mdc_write_rpc_in_flight=$(grep "write RPCs in flight" ${tfile1} | awk '{print $5}' | paste -sd+ | bc)
-        mdc_pending_read_pages=$(grep "pending read pages" ${tfile1} | awk '{print $4}' | paste -sd+ | bc)
-        mdc_pending_write_pages=$(grep "pending write pages" ${tfile1} | awk '{print $4}' | paste -sd+ | bc)
+		## RPC Size Info
+		awk 'index($0,"pages per rpc"){p=1}p{if(/^$/){exit};print}' "${tfile}" | tail -n +2 |  awk -v pool="${pool}" '{print $1" "$2" "$6" "pool}' | sed 's/://' >> "${tfile}".size
 
-        osc_read_rpc_in_flight=$(grep "read RPCs in flight" ${tfile2} | awk '{print $5}' | paste -sd+ | bc)
-        osc_write_rpc_in_flight=$(grep "write RPCs in flight" ${tfile2} | awk '{print $5}' | paste -sd+ | bc)
-        osc_dio_rpcs_in_flight=$(grep "DIO RPCs in flight" ${tfile2} | awk '{print $5}' | paste -sd+ | bc)
-        osc_pending_read_pages=$(grep "pending read pages" ${tfile2} | awk '{print $4}' | paste -sd+ | bc)
-        osc_pending_write_pages=$(grep "pending write pages" ${tfile2} | awk '{print $4}' | paste -sd+ | bc)
+		## RPC Inflight
+		awk 'index($0,"rpcs in flight"){p=1}p{if(/^$/){exit};print}' "${tfile}" | tail -n +2 |  awk -v pool="${pool}" '{print $1" "$2" "$6" "pool}' | sed 's/://' >> "${tfile}".inflight
+	done
 
-        echo "lustre_client_rpc_stats,fs=${f} mdc_read_rpc_in_flight=${mdc_read_rpc_in_flight},mdc_write_rpc_in_flight=${mdc_write_rpc_in_flight},mdc_pending_read_pages=${mdc_pending_read_pages},mdc_pending_write_pages=${mdc_pending_write_pages},osc_read_rpc_in_flight=${osc_read_rpc_in_flight},osc_write_rpc_in_flight=${osc_write_rpc_in_flight},osc_dio_rpcs_in_flight=${osc_dio_rpcs_in_flight},osc_pending_read_pages=${osc_pending_read_pages},osc_pending_write_page=${osc_pending_write_pages}"
+	echo "lustre_client_rpc_stats,fs=$f,type=general read_rpcs_in_flight=${rrpc_inflight},write_rpcs_in_flight=${wrpc_inflight}"
 
-        ${LCTL_CMD} get_param mdc.${f}-*.timeouts > ${tfile1}
-        ${LCTL_CMD} get_param osc.${f}-*.timeouts > ${tfile2}
+       ## Tally Size Info
+        pages=($(awk '{print $1}' "${tfile}".size | sort -u | xargs))
+        all_rpcs_read=$(awk '{print $2}' "${tfile}".size | paste -sd+ | bc)
+        all_rpcs_write=$(awk '{print $3}' "${tfile}".size | paste -sd+ | bc)
+	for p in ${pages[@]}
+        do
+		if [ ${are_pools} -eq 1 ]; then
+			for l in ${pools[@]}
+			do
+				real_pool=$(echo ${l} | cut -d'.' -f 2)
+				read_rpcs=$(awk -v l=${real_pool} -v p=${p} '$4 == l  && $1 == p {print $2}' "${tfile}".size | paste -sd+ | bc)
+				write_rpcs=$(awk -v l=${real_pool} -v p=${p} '$4 == l  && $1 == p {print $3}' "${tfile}".size  | paste -sd+ | bc)
+	                        if [ -n "${read_rpcs[@]}" ] && [ ${all_rpcs_read} -ne 0 ]; then
+	                                read_rpcs_per=$(echo "scale=7; ${read_rpcs}/${all_rpcs_read}*100" | bc -l)
+	                        else
+	                                read_rpcs=0
+	                                read_rpcs_per=0
+	                        fi
+	                        if [ -n "${write_rpcs[@]}" ] && [ ${all_rpcs_write} -ne 0 ]; then
+	                                write_rpcs_per=$(echo "scale=7; ${write_rpcs}/${all_rpcs_write}*100" | bc -l)
+	                        else
+	                                write_rpcs=0
+	                                write_rpcs_per=0
+	                        fi
+		                echo "lustre_client_rpc_stats,fs=${f},pool=${real_pool},type=pages_per_rpc,pages=${p} read_rpcs=${read_rpcs},read_rpcs_percent=${read_rpcs_per},write_rpcs=${write_rpcs},write_rpcs_percent=${write_rpcs_per}"
+			done
+		else
+			real_pool=all
+			read_rpcs=$(awk '{print $2}' "${tfile}".size | paste -sd+ | bc)
+                        write_rpcs=$(awk '{print $3}' "${tfile}".size  | paste -sd+ | bc)
+			if [ -n "${read_rpcs[@]}" ] && [ ${all_rpcs_read} -ne 0 ]; then
+                        	read_rpcs_per=$(echo "scale=7; ${read_rpcs}/${all_rpcs_read}*100" | bc -l)
+                        else
+                        	read_rpcs=0
+                                read_rpcs_per=0
+                        fi
+                        if [ -n "${write_rpcs[@]}" ] && [ ${all_rpcs_write} -ne 0 ]; then
+                        	write_rpcs_per=$(echo "scale=7; ${write_rpcs}/${all_rpcs_write}*100" | bc -l)
+                        else
+                        	write_rpcs=0
+                                write_rpcs_per=0
+                        fi
+                        echo "lustre_client_rpc_stats,fs=${f},pool=${real_pool},type=pages_per_rpc,pages=${p} read_rpcs=${read_rpcs},read_rpcs_percent=${read_rpcs_per},write_rpcs=${write_rpcs},write_rpcs_percent=${write_rpcs_per}"
+		fi
+	done
 
-        mdc_avg_reply_time=$(cat ${tfile1} | grep "last reply" | cut -d' ' -f 5 | sed 's/s//g' | awk '{sum+=$1} END {print sum/NR}')
-        mdc_max_reply_time=$(cat ${tfile1} | grep "last reply" | cut -d' ' -f 5 | sed 's/s//g' | sort -un | tail -n 1)
-        mdc_median_reply_time=$(cat ${tfile1} | grep "last reply" | cut -d' ' -f 5 | sed 's/s//g' | awk '{a[NR]=$1} END {asort(a); if (NR%2==1) print a[(NR+1)/2]; else print (a[NR/2]+a[NR/2+1])/2}')
-        osc_avg_reply_time=$(cat ${tfile2} | grep "last reply" | cut -d' ' -f 5 | sed 's/s//g' | awk '{sum+=$1} END {print sum/NR}')
-        osc_max_reply_time=$(cat ${tfile2} | grep "last reply" | cut -d' ' -f 5 | sed 's/s//g' | sort -un | tail -n 1)
-        osc_median_reply_time=$(cat ${tfile2} | grep "last reply" | cut -d' ' -f 5 | sed 's/s//g' | awk '{a[NR]=$1} END {asort(a); if (NR%2==1) print a[(NR+1)/2]; else print (a[NR/2]+a[NR/2+1])/2}')
+        ## Tally Inflight Info
+        rpcs=($(awk '{print $1}' "${tfile}".inflight | sort -u | xargs))
+        all_rpcs_read=$(awk '{print $2}' "${tfile}".inflight | paste -sd+ | bc)
+        all_rpcs_write=$(awk '{print $3}' "${tfile}".inflight | paste -sd+ | bc)
+        for r in ${rpcs[@]}
+        do
+		if [ ${are_pools} -eq 1 ]; then
+			for l in ${pools[@]}
+			do
+				real_pool=$(echo ${l} | cut -d'.' -f 2)
+		                read_rpcs=$(awk -v l=${real_pool} -v r=${r} '$4 == l  && $1 == r {print $2}' "${tfile}".inflight | paste -sd+ | bc)
+		                write_rpcs=$(awk -v l=${real_pool} -v r=${r} '$4 == l  && $1 == r {print $3}' "${tfile}".inflight | paste -sd+ | bc)
+				if [ -n "${read_rpcs}" ] && [ ${all_rpcs_read} -ne 0 ]; then
+					read_rpcs_per=$(echo "scale=7; ${read_rpcs}/${all_rpcs_read}*100" | bc -l)
+				else
+					read_rpcs=0
+					read_rpcs_per=0
+				fi
+				if [ -n "${write_rpcs}" ] && [ ${all_rpcs_write} -ne 0 ]; then
+					write_rpcs_per=$(echo "scale=7; ${write_rpcs}/${all_rpcs_write}*100" | bc -l)
+				else
+					write_rpcs=0
+					write_rpcs_per=0
+				fi
+				echo "lustre_client_rpc_stats,fs=${f},pool=${real_pool},type=rpcs_in_flight,rpcs=${r} read_rpcs=${read_rpcs},read_rpcs_percent=${read_rpcs_per},write_rpcs=${write_rpcs},write_rpcs_percent=${write_rpcs_per}"
+			done
+		else
+			real_pool=all
+                        read_rpcs=$(awk -v r=${r} '$1 == r {print $2}' "${tfile}".inflight | paste -sd+ | bc)
+                        write_rpcs=$(awk -v r=${r} '$1 == r {print $3}' "${tfile}".inflight | paste -sd+ | bc)
+                        if [ -n "${read_rpcs}" ] && [ ${all_rpcs_read} -ne 0 ]; then
+                        	read_rpcs_per=$(echo "scale=7; ${read_rpcs}/${all_rpcs_read}*100" | bc -l)
+                        else
+                        	read_rpcs=0
+                                read_rpcs_per=0
+                        fi
+                        if [ -n "${write_rpcs}" ] && [ ${all_rpcs_write} -ne 0 ]; then
+                        	write_rpcs_per=$(echo "scale=7; ${write_rpcs}/${all_rpcs_write}*100" | bc -l)
+                        else
+                        	write_rpcs=0
+                                write_rpcs_per=0
+                        fi
+                        echo "lustre_client_rpc_stats,fs=${f},pool=${real_pool},type=rpcs_in_flight,rpcs=${r} read_rpcs=${read_rpcs},read_rpcs_percent=${read_rpcs_per},write_rpcs=${write_rpcs},write_rpcs_percent=${write_rpcs_per}"
+		fi
+	done
 
-        echo "lustre_client_target_timeout,fs=${f} mdc_avg_reply_time=${mdc_avg_reply_time},mdc_max_reply_time=${mdc_max_reply_time},mdc_median_reply_time=${mdc_median_reply_time},osc_avg_reply_time=${osc_avg_reply_time},osc_max_reply_time=${osc_max_reply_time},osc_median_reply_time=${osc_median_reply_time}"
-
-        ${LCTL_CMD} get_param llite.${f}-*.stats > ${tfile1}
-        stats=$(cat ${tfile1} | grep -v time | awk '$7 != "" {print $1" "$7}' | awk '{sums[$1]+=$2} END{for (i in sums) print i, sums[i]}' | sort | sed 's/\ /=/' | tr '\n' ',' | sed 's/,$//')
-        echo "lustre_client_clientside_perf_stats,fs=${f} ${stats}"
-
-        ${LCTL_CMD} get_param ldlm.namespaces.${f}-*.pool.stats > ${tfile1}
-        stats=$(cat ${tfile1} | grep -v time | grep -v namespaces | sort -k1 | awk '$7 != "" {print $1" "$7}' | awk '{sums[$1]+=$2} END{for (i in sums) print i, sums[i]}' | sort | sed 's/\ /=/' | tr '\n' ',' | sed 's/,$//')
-        echo "lustre_client_ldlm_pool_stats,fs=${f} ${stats}"
-
-        ${LCTL_CMD} get_param ldlm.namespaces.${f}-*.resource_count > ${tfile1}
-        locks=$(cat ${tfile1} | cut -d'=' -f 2 | paste -sd+ | bc)
-        echo "lustre_client_ldlm_resource_stats,fs=${f} locks=${locks}"
 done
 
-## Cleanup
-rm -f ${tfile1} ${tfile2}
+rm -rf "${tfile}" "${tfile}.size" "${tfile}.inflight" "${tfile}.pools"
