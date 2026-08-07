@@ -73,6 +73,8 @@ profile_lustre::telegraf::lustre_client_health::enabled: true
 profile_lustre::telegraf::lustre_client_health::script_cfg:
   # Array of Mount Paths eg. "/taiga"
   fs: []
+  # Array of FS devices eg. "taiga"
+  filesystems: []
   # Array of paths to run ls check on eg. "/ngale/u/"
   paths: []
   # Array of files to check stat eg. "/ngale/.SETcheck"

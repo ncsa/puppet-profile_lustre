@@ -269,6 +269,10 @@ profile_lustre::telegraf::lustre_client_health::script_cfg:
     - "/scratch"
     - "/storage"
     - "/projects"
+  # Array of FS devices
+  filesystems:
+    - "dltawork"
+    - "taiga"
   # Array of paths to run ls check on
   paths:
     - "/prg/home"
